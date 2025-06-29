@@ -78,7 +78,7 @@ export function Generator() {
             <div className="mt-4 flex justify-center">
               <div className="flex items-center space-x-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm">
                 <Wand2 className="w-4 h-4" />
-                <span>Propulsé par Gemini AI</span>
+                <span>Générateur IA intelligent</span>
               </div>
             </div>
           </div>
@@ -190,7 +190,7 @@ export function Generator() {
                 {state.isGenerating ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Gemini génère vos phrases...</span>
+                    <span>L'IA génère vos phrases...</span>
                   </>
                 ) : (
                   <>
@@ -211,7 +211,7 @@ export function Generator() {
                   Vos 10 phrases d'accroche sont prêtes !
                 </h3>
                 <p className="text-green-700 mb-6">
-                  Générées par Gemini AI - Débloquez votre pack personnalisé pour seulement 3€
+                  Générées par notre IA - Débloquez votre pack personnalisé pour seulement 3€
                 </p>
                 <button
                   onClick={navigateToPayment}
