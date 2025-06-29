@@ -1,6 +1,7 @@
 import React from 'react';
 import { Zap, Mail, Twitter, Linkedin, Github, Heart } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import BoltBadge from './BoltBadge';
 
 export function Footer() {
   const { navigateToHome, navigateToGenerator } = useApp();
@@ -197,22 +198,31 @@ export function Footer() {
               <span>pour les créateurs.</span>
             </div>
             
-            <div className="flex items-center space-x-6 text-sm">
-              <a
-                href="#status"
-                className="text-gray-600 hover:text-purple-600 transition-colors"
-              >
-                Statut du service
-              </a>
-              <a
-                href="#api"
-                className="text-gray-600 hover:text-purple-600 transition-colors"
-              >
-                API
-              </a>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-gray-600">Tous systèmes opérationnels</span>
+            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6">
+              <div className="flex items-center space-x-6 text-sm">
+                <a
+                  href="#status"
+                  className="text-gray-600 hover:text-purple-600 transition-colors"
+                >
+                  Statut du service
+                </a>
+                <a
+                  href="#api"
+                  className="text-gray-600 hover:text-purple-600 transition-colors"
+                >
+                  API
+                </a>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-gray-600">Tous systèmes opérationnels</span>
+                </div>
+              </div>
+              
+              {/* Bolt Badge */}
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-0.5 rounded-full">
+                <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-full">
+                  <BoltBadge />
+                </div>
               </div>
             </div>
           </div>
