@@ -1,5 +1,6 @@
 import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { Layout } from './components/Layout';
 import { HomePage } from './components/HomePage';
 import { Generator } from './components/Generator';
 import { Payment } from './components/Payment';
@@ -25,7 +26,9 @@ function AppContent() {
 function App() {
   return (
     <AppProvider>
-      <AppContent />
+      <Layout>
+        <AppContent />
+      </Layout>
     </AppProvider>
   );
 }

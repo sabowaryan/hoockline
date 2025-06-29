@@ -31,7 +31,7 @@ export function Results() {
 
   if (!state.generatedPhrases.length) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600 mb-4">Aucune phrase générée</p>
           <button
@@ -46,22 +46,22 @@ export function Results() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
+    <>
       {/* Header */}
-      <header className="container mx-auto px-4 py-6">
+      <header className="py-4 sm:py-6">
         <div className="flex items-center justify-between">
           <button
             onClick={navigateToHome}
             className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
           >
-            <Home className="w-5 h-5" />
-            <span>Accueil</span>
+            <Home className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-sm sm:text-base">Accueil</span>
           </button>
           <div className="flex items-center space-x-2">
-            <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg">
-              <CheckCircle className="w-4 h-4 text-white" />
+            <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg">
+              <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Clicklone
             </span>
           </div>
@@ -69,29 +69,29 @@ export function Results() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="py-6 sm:py-8">
         <div className="max-w-4xl mx-auto">
           {/* Success Header */}
-          <div className="text-center mb-12">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-10 h-10 text-green-600" />
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Vos phrases d'accroche sont prêtes !
             </h1>
-            <p className="text-lg text-gray-600 mb-2">
+            <p className="text-base sm:text-lg text-gray-600 mb-2 px-4 sm:px-0">
               Voici vos 10 phrases personnalisées pour : 
-              <span className="font-semibold text-gray-900">
+              <span className="font-semibold text-gray-900 block sm:inline">
                 {state.generationRequest?.concept}
               </span>
             </p>
-            <div className="flex items-center justify-center space-x-4 text-gray-500">
+            <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 text-gray-500 text-sm sm:text-base">
               <span className="capitalize">
                 Ton {state.generationRequest?.tone}
               </span>
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <div className="flex items-center space-x-2">
-                <Globe className="w-4 h-4" />
+                <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>
                   {languageNames[state.generationRequest?.language || 'fr'] || state.generationRequest?.language}
                 </span>
@@ -100,26 +100,26 @@ export function Results() {
           </div>
 
           {/* Generated Phrases */}
-          <div className="space-y-4 mb-12">
+          <div className="space-y-3 sm:space-y-4 mb-8 sm:mb-12">
             {state.generatedPhrases.map((phrase, index) => (
               <div
                 key={phrase.id}
-                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between space-x-4">
-                  <div className="flex-1">
+                <div className="flex items-start justify-between space-x-3 sm:space-x-4">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-3 mb-3">
-                      <span className="text-sm font-medium text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
+                      <span className="text-xs sm:text-sm font-medium text-purple-600 bg-purple-100 px-2 sm:px-3 py-1 rounded-full">
                         #{index + 1}
                       </span>
                     </div>
-                    <blockquote className="text-lg font-medium text-gray-900 leading-relaxed">
+                    <blockquote className="text-base sm:text-lg font-medium text-gray-900 leading-relaxed break-words">
                       "{phrase.text}"
                     </blockquote>
                   </div>
                   <button
                     onClick={() => handleCopy(phrase.text, phrase.id)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                    className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 rounded-lg transition-all flex-shrink-0 ${
                       copiedPhrases.has(phrase.id)
                         ? 'bg-green-100 text-green-700'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -127,13 +127,13 @@ export function Results() {
                   >
                     {copiedPhrases.has(phrase.id) ? (
                       <>
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="text-sm font-medium">Copié !</span>
+                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">Copié !</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-4 h-4" />
-                        <span className="text-sm font-medium">Copier</span>
+                        <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="text-xs sm:text-sm font-medium hidden sm:inline">Copier</span>
                       </>
                     )}
                   </button>
@@ -143,33 +143,33 @@ export function Results() {
           </div>
 
           {/* Final Message & CTA */}
-          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 text-center text-white">
-            <h3 className="text-2xl font-bold mb-4">
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 sm:p-8 text-center text-white">
+            <h3 className="text-xl sm:text-2xl font-bold mb-4">
               C'est parti pour conquérir le monde !
             </h3>
-            <p className="text-purple-100 mb-6 text-lg">
+            <p className="text-purple-100 mb-6 text-base sm:text-lg">
               Utilisez ces phrases pour vos titres, vos slogans ou vos posts. 
               Revenez quand vous le souhaitez pour générer de nouvelles accroches dans d'autres langues !
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <button
                 onClick={navigateToHome}
-                className="inline-flex items-center space-x-2 bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+                className="inline-flex items-center justify-center space-x-2 bg-white text-purple-600 px-4 sm:px-6 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
               >
-                <RefreshCw className="w-5 h-5" />
+                <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>Générer d'autres phrases</span>
               </button>
               <button
                 onClick={navigateToHome}
-                className="inline-flex items-center space-x-2 bg-purple-500/20 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-500/30 transition-colors border border-purple-400/30"
+                className="inline-flex items-center justify-center space-x-2 bg-purple-500/20 text-white px-4 sm:px-6 py-3 rounded-lg font-semibold hover:bg-purple-500/30 transition-colors border border-purple-400/30"
               >
-                <Home className="w-5 h-5" />
+                <Home className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>Retour à l'accueil</span>
               </button>
             </div>
           </div>
         </div>
       </main>
-    </div>
+    </>
   );
 }
