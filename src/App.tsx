@@ -29,30 +29,25 @@ function AppContent() {
   }
 }
 
-function PublicApp() {
-  return (
-    <AppProvider>
-      <Layout>
-        <AppContent />
-      </Layout>
-    </AppProvider>
-  );
-}
-
-function AdminApp() {
-  return (
-    <AuthWrapper>
-      {(user) => <AdminDashboard user={user} />}
-    </AuthWrapper>
-  );
-}
-
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<PublicApp />} />
-        <Route path="/admin" element={<AdminApp />} />
+        {/* Public routes with Layout */}
+        <Route path="/" element={
+          <AppProvider>
+            <Layout>
+              <AppContent />
+            </Layout>
+          </AppProvider>
+        } />
+        
+        {/* Admin route without public Layout */}
+        <Route path="/admin" element={
+          <AuthWrapper>
+            {(user) => <AdminDashboard user={user} />}
+          </AuthWrapper>
+        } />
       </Routes>
     </BrowserRouter>
   );
