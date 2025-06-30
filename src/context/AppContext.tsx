@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { AppState, GenerationRequest, GeneratedPhrase } from '../types';
+import { Analytics } from '../services/analytics';
 
 interface AppContextType {
   state: AppState;
@@ -82,6 +83,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success') === 'true') {
       dispatch({ type: 'NAVIGATE_TO_SUCCESS' });
+      // Track successful payment
+      Analytics.trackPaymentComplete('order_id', 3.99);
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('canceled') === 'true') {
@@ -98,6 +101,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const generatePhrases = async (request: GenerationRequest) => {
     dispatch({ type: 'START_GENERATION', payload: request });
+    
+    // Track generator start
+    Analytics.trackGeneratorStart(request.concept, request.tone, request.language);
     
     try {
       // Import Gemini service
@@ -126,6 +132,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const navigateToPayment = () => {
     dispatch({ type: 'NAVIGATE_TO_PAYMENT' });
+    // Track payment start
+    Analytics.trackPaymentStart('hookline', 3.99);
   };
 
   const completePayment = () => {
