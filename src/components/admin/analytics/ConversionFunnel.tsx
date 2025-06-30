@@ -6,7 +6,7 @@ import { BarChart } from '../charts/BarChart';
 interface FunnelStep {
   step: string;
   count: number;
-  conversion_rate: number;
+  conversion_rate: number | null;
 }
 
 export const ConversionFunnel = memo(() => {
@@ -29,7 +29,13 @@ export const ConversionFunnel = memo(() => {
 
       if (funnelError) throw funnelError;
 
-      setFunnelData(data || []);
+      // Ensure conversion_rate is never null
+      const processedData = (data || []).map(step => ({
+        ...step,
+        conversion_rate: step.conversion_rate ?? 0
+      }));
+
+      setFunnelData(processedData);
     } catch (err: any) {
       console.error('Error fetching funnel data:', err);
       setError('Erreur lors du chargement du funnel de conversion');
@@ -130,6 +136,9 @@ export const ConversionFunnel = memo(() => {
             const dropoffRate = index > 0 ? 
               ((funnelData[index - 1].count - step.count) / funnelData[index - 1].count * 100) : 0;
 
+            // Safe conversion rate handling
+            const conversionRate = step.conversion_rate ?? 0;
+
             return (
               <div key={step.step} className="relative">
                 <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
@@ -145,7 +154,7 @@ export const ConversionFunnel = memo(() => {
                           {step.count.toLocaleString()}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {step.conversion_rate.toFixed(1)}% du total
+                          {conversionRate.toFixed(1)}% du total
                         </div>
                       </div>
                     </div>
@@ -155,11 +164,11 @@ export const ConversionFunnel = memo(() => {
                         <div className="flex-1 bg-gray-200 rounded-full h-2">
                           <div 
                             className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${step.conversion_rate}%` }}
+                            style={{ width: `${Math.max(0, Math.min(100, conversionRate))}%` }}
                           ></div>
                         </div>
                         <span className="text-xs text-red-600 font-medium">
-                          -{dropoffRate.toFixed(1)}% abandon
+                          -{Math.max(0, dropoffRate).toFixed(1)}% abandon
                         </span>
                       </div>
                     )}
@@ -198,7 +207,7 @@ export const ConversionFunnel = memo(() => {
               <p className="text-sm font-medium text-gray-600">Taux de conversion global</p>
               <p className="text-2xl font-bold text-gray-900">
                 {funnelData.length > 0 && funnelData[funnelData.length - 1] ? 
-                  `${funnelData[funnelData.length - 1].conversion_rate.toFixed(2)}%` : '0%'}
+                  `${(funnelData[funnelData.length - 1].conversion_rate ?? 0).toFixed(2)}%` : '0%'}
               </p>
             </div>
           </div>
@@ -213,7 +222,7 @@ export const ConversionFunnel = memo(() => {
               <p className="text-sm font-medium text-gray-600">Visiteurs → Générateur</p>
               <p className="text-2xl font-bold text-gray-900">
                 {funnelData.length > 1 ? 
-                  `${((funnelData[1]?.count || 0) / (funnelData[0]?.count || 1) * 100).toFixed(1)}%` : '0%'}
+                  `${(((funnelData[1]?.count || 0) / Math.max(1, funnelData[0]?.count || 1)) * 100).toFixed(1)}%` : '0%'}
               </p>
             </div>
           </div>
@@ -228,7 +237,7 @@ export const ConversionFunnel = memo(() => {
               <p className="text-sm font-medium text-gray-600">Générateur → Paiement</p>
               <p className="text-2xl font-bold text-gray-900">
                 {funnelData.length > 2 ? 
-                  `${((funnelData[3]?.count || 0) / (funnelData[1]?.count || 1) * 100).toFixed(1)}%` : '0%'}
+                  `${(((funnelData[3]?.count || 0) / Math.max(1, funnelData[1]?.count || 1)) * 100).toFixed(1)}%` : '0%'}
               </p>
             </div>
           </div>
