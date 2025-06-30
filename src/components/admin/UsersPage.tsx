@@ -2,18 +2,16 @@ import React, { useState, useEffect, memo } from 'react';
 import { 
   Users, 
   Search, 
-  Filter, 
-  MoreHorizontal, 
   UserPlus, 
-  Mail, 
   Calendar,
   Shield,
-  User,
-  Edit,
-  Trash2,
-  Eye
+  User
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { UserRow } from './components/UserRow';
+import { AddUserModal } from './modals/AddUserModal';
+import { ViewUserModal } from './modals/ViewUserModal';
+import { DeleteUserModal } from './modals/DeleteUserModal';
 
 interface UserProfile {
   id: string;
@@ -23,127 +21,50 @@ interface UserProfile {
   email?: string;
 }
 
-interface UserRowProps {
-  user: UserProfile;
-  index: number;
-}
-
-const UserRow = memo(({ user, index }: UserRowProps) => (
-  <tr className="hover:bg-gray-50">
-    <td className="px-6 py-4 whitespace-nowrap">
-      <div className="flex items-center">
-        <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
-          <span className="text-white text-sm font-medium">
-            {user.email?.charAt(0).toUpperCase() || 'U'}
-          </span>
-        </div>
-        <div className="ml-4">
-          <div className="text-sm font-medium text-gray-900">
-            {user.email || `Utilisateur ${index + 1}`}
-          </div>
-          <div className="text-sm text-gray-500">
-            ID: {user.id.slice(0, 8)}...
-          </div>
-        </div>
-      </div>
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap">
-      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-        user.role === 'admin' 
-          ? 'bg-purple-100 text-purple-800' 
-          : 'bg-gray-100 text-gray-800'
-      }`}>
-        {user.role === 'admin' ? (
-          <>
-            <Shield className="w-3 h-3 mr-1" />
-            Admin
-          </>
-        ) : (
-          <>
-            <User className="w-3 h-3 mr-1" />
-            Utilisateur
-          </>
-        )}
-      </span>
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-      {new Date(user.created_at).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      })}
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-      {new Date(user.updated_at).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      })}
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-      <div className="flex items-center space-x-2">
-        <button className="text-gray-400 hover:text-gray-600 p-1 rounded">
-          <Eye className="w-4 h-4" />
-        </button>
-        <button className="text-gray-400 hover:text-gray-600 p-1 rounded">
-          <Edit className="w-4 h-4" />
-        </button>
-        <button className="text-gray-400 hover:text-red-600 p-1 rounded">
-          <Trash2 className="w-4 h-4" />
-        </button>
-        <button className="text-gray-400 hover:text-gray-600 p-1 rounded">
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
-      </div>
-    </td>
-  </tr>
-));
-
 export const UsersPage = memo(() => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'user'>('all');
+  
+  // Modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch profiles only (we can't access auth.users with anon key)
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, role, created_at, updated_at')
-          .order('created_at', { ascending: false });
-
-        if (profilesError) {
-          throw profilesError;
-        }
-
-        // For now, we'll work with profiles only
-        // In a production environment, you would need to:
-        // 1. Create a server-side function with service_role access
-        // 2. Or store email in the profiles table
-        // 3. Or use RLS policies with proper permissions
-
-        const usersData = profiles?.map(profile => ({
-          ...profile,
-          email: `user-${profile.id.slice(0, 8)}@example.com` // Placeholder email
-        })) || [];
-
-        setUsers(usersData);
-      } catch (err: any) {
-        console.error('Error fetching users:', err);
-        setError('Erreur lors du chargement des utilisateurs');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, role, created_at, updated_at')
+        .order('created_at', { ascending: false });
+
+      if (profilesError) {
+        throw profilesError;
+      }
+
+      const usersData = profiles?.map(profile => ({
+        ...profile,
+        email: `user-${profile.id.slice(0, 8)}@example.com`
+      })) || [];
+
+      setUsers(usersData);
+    } catch (err: any) {
+      console.error('Error fetching users:', err);
+      setError('Erreur lors du chargement des utilisateurs');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter users based on search term and role filter
   const filteredUsers = users.filter(user => {
@@ -166,6 +87,31 @@ export const UsersPage = memo(() => {
       weekAgo.setDate(weekAgo.getDate() - 7);
       return createdDate > weekAgo;
     }).length
+  };
+
+  // Modal handlers
+  const handleViewUser = (user: UserProfile) => {
+    setSelectedUser(user);
+    setShowViewModal(true);
+  };
+
+  const handleEditUser = (user: UserProfile) => {
+    setSelectedUser(user);
+    // TODO: Implement edit modal
+    console.log('Edit user:', user);
+  };
+
+  const handleDeleteUser = (user: UserProfile) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
+
+  const handleUserAdded = () => {
+    fetchUsers();
+  };
+
+  const handleUserDeleted = () => {
+    fetchUsers();
   };
 
   if (loading) {
@@ -216,167 +162,201 @@ export const UsersPage = memo(() => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Info Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <div className="flex items-start space-x-3">
-          <div className="w-5 h-5 text-blue-600 mt-0.5">ℹ️</div>
-          <div>
-            <h4 className="text-sm font-medium text-blue-900 mb-1">
-              Gestion des utilisateurs (Version limitée)
-            </h4>
-            <p className="text-sm text-blue-700">
-              Cette version affiche les profils utilisateurs. Pour accéder aux emails et fonctionnalités avancées, 
-              une configuration avec clé service_role est nécessaire.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
+    <>
+      <div className="space-y-6">
+        {/* Info Banner */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-start space-x-3">
+            <div className="w-5 h-5 text-blue-600 mt-0.5">ℹ️</div>
             <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Total utilisateurs</p>
-              <p className="text-2xl font-bold text-gray-900">{userStats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Administrateurs</p>
-              <p className="text-2xl font-bold text-gray-900">{userStats.admins}</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Shield className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Utilisateurs standards</p>
-              <p className="text-2xl font-bold text-gray-900">{userStats.users}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <User className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 mb-1">Nouveaux (7j)</p>
-              <p className="text-2xl font-bold text-gray-900">{userStats.recent}</p>
-            </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-orange-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Users Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Gestion des utilisateurs</h3>
-              <p className="text-sm text-gray-600">
-                {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''} trouvé{filteredUsers.length > 1 ? 's' : ''}
+              <h4 className="text-sm font-medium text-blue-900 mb-1">
+                Gestion des utilisateurs (Version limitée)
+              </h4>
+              <p className="text-sm text-blue-700">
+                Cette version affiche les profils utilisateurs. Pour accéder aux emails et fonctionnalités avancées, 
+                une configuration avec clé service_role est nécessaire.
               </p>
             </div>
-            
-            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-              {/* Search */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Rechercher..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
+          </div>
+        </div>
 
-              {/* Role Filter */}
-              <div className="relative">
-                <select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value as 'all' | 'admin' | 'user')}
-                  className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  <option value="all">Tous les rôles</option>
-                  <option value="admin">Administrateurs</option>
-                  <option value="user">Utilisateurs</option>
-                </select>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Total utilisateurs</p>
+                <p className="text-2xl font-bold text-gray-900">{userStats.total}</p>
               </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
 
-              {/* Add User Button */}
-              <button className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/25 transition-all">
-                <UserPlus className="w-4 h-4" />
-                <span>Ajouter</span>
-              </button>
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Administrateurs</p>
+                <p className="text-2xl font-bold text-gray-900">{userStats.admins}</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Shield className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Utilisateurs standards</p>
+                <p className="text-2xl font-bold text-gray-900">{userStats.users}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <User className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Nouveaux (7j)</p>
+                <p className="text-2xl font-bold text-gray-900">{userStats.recent}</p>
+              </div>
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-orange-600" />
+              </div>
             </div>
           </div>
         </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Utilisateur
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rôle
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date de création
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Dernière mise à jour
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user, index) => (
-                  <UserRow key={user.id} user={user} index={index} />
-                ))
-              ) : (
+
+        {/* Users Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Gestion des utilisateurs</h3>
+                <p className="text-sm text-gray-600">
+                  {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''} trouvé{filteredUsers.length > 1 ? 's' : ''}
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                {/* Search */}
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Rechercher..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Role Filter */}
+                <div className="relative">
+                  <select
+                    value={roleFilter}
+                    onChange={(e) => setRoleFilter(e.target.value as 'all' | 'admin' | 'user')}
+                    className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="all">Tous les rôles</option>
+                    <option value="admin">Administrateurs</option>
+                    <option value="user">Utilisateurs</option>
+                  </select>
+                </div>
+
+                {/* Add User Button */}
+                <button 
+                  onClick={() => setShowAddModal(true)}
+                  className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/25 transition-all"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Ajouter</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
-                    <div className="flex flex-col items-center">
-                      <Users className="w-8 h-8 text-gray-300 mb-2" />
-                      <p>Aucun utilisateur trouvé</p>
-                      {searchTerm && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          Essayez de modifier votre recherche
-                        </p>
-                      )}
-                    </div>
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Utilisateur
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Rôle
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date de création
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Dernière mise à jour
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((user, index) => (
+                    <UserRow 
+                      key={user.id} 
+                      user={user} 
+                      index={index}
+                      onView={handleViewUser}
+                      onEdit={handleEditUser}
+                      onDelete={handleDeleteUser}
+                    />
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
+                      <div className="flex flex-col items-center">
+                        <Users className="w-8 h-8 text-gray-300 mb-2" />
+                        <p>Aucun utilisateur trouvé</p>
+                        {searchTerm && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            Essayez de modifier votre recherche
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Modals */}
+      <AddUserModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onUserAdded={handleUserAdded}
+      />
+
+      <ViewUserModal
+        isOpen={showViewModal}
+        onClose={() => setShowViewModal(false)}
+        user={selectedUser}
+      />
+
+      <DeleteUserModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        user={selectedUser}
+        onUserDeleted={handleUserDeleted}
+      />
+    </>
   );
 });
+
+UsersPage.displayName = 'UsersPage';
