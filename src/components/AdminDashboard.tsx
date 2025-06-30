@@ -5,6 +5,7 @@ import { AdminLayout } from './admin/AdminLayout';
 import { DashboardStats } from './admin/DashboardStats';
 import { RecentOrders } from './admin/RecentOrders';
 import { QuickActions } from './admin/QuickActions';
+import { UsersPage } from './admin/UsersPage';
 
 interface AdminDashboardProps {
   user: User;
@@ -17,6 +18,8 @@ interface DashboardData {
   recentOrders: any[];
 }
 
+type AdminSection = 'dashboard' | 'users' | 'orders' | 'analytics' | 'settings';
+
 export function AdminDashboard({ user }: AdminDashboardProps) {
   const [data, setData] = useState<DashboardData>({
     totalUsers: 0,
@@ -26,6 +29,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeAdminSection, setActiveAdminSection] = useState<AdminSection>('dashboard');
 
   // Optimized data fetching with parallel requests
   useEffect(() => {
@@ -87,15 +91,24 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
       }
     };
 
-    fetchDashboardData();
-  }, []);
+    // Only fetch dashboard data when on dashboard section
+    if (activeAdminSection === 'dashboard') {
+      fetchDashboardData();
+    } else {
+      setLoading(false);
+    }
+  }, [activeAdminSection]);
 
   // Memoized stats to prevent unnecessary re-renders
   const memoizedStats = useMemo(() => data, [data]);
 
-  if (loading) {
-    return (
-      <AdminLayout user={user}>
+  const handleSectionChange = (sectionId: string) => {
+    setActiveAdminSection(sectionId as AdminSection);
+  };
+
+  const renderContent = () => {
+    if (loading && activeAdminSection === 'dashboard') {
+      return (
         <div className="space-y-8">
           {/* Loading skeleton */}
           <div className="bg-gradient-to-r from-gray-200 to-gray-300 rounded-2xl p-6 sm:p-8 animate-pulse">
@@ -113,13 +126,11 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
             ))}
           </div>
         </div>
-      </AdminLayout>
-    );
-  }
+      );
+    }
 
-  if (error) {
-    return (
-      <AdminLayout user={user}>
+    if (error && activeAdminSection === 'dashboard') {
+      return (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -135,49 +146,95 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
             </button>
           </div>
         </div>
-      </AdminLayout>
-    );
-  }
+      );
+    }
+
+    switch (activeAdminSection) {
+      case 'dashboard':
+        return (
+          <div className="space-y-8">
+            {/* Welcome Section */}
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 sm:p-8 text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-2">
+                    Bienvenue, Administrateur
+                  </h1>
+                  <p className="text-purple-100 text-lg">
+                    Voici un aperçu de l'activité de Clicklone
+                  </p>
+                </div>
+                <div className="mt-4 sm:mt-0 text-right">
+                  <div className="text-3xl font-bold">
+                    {new Date().toLocaleDateString('fr-FR', { 
+                      day: '2-digit', 
+                      month: 'short' 
+                    })}
+                  </div>
+                  <div className="text-purple-200 text-sm">
+                    {new Date().toLocaleDateString('fr-FR', { 
+                      weekday: 'long' 
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <DashboardStats stats={memoizedStats} />
+
+            {/* Recent Orders */}
+            <RecentOrders orders={memoizedStats.recentOrders} />
+
+            {/* Quick Actions */}
+            <QuickActions />
+          </div>
+        );
+
+      case 'users':
+        return <UsersPage />;
+
+      case 'orders':
+        return (
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Gestion des commandes</h3>
+            <p className="text-gray-600">Cette section sera bientôt disponible.</p>
+          </div>
+        );
+
+      case 'analytics':
+        return (
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Analytiques avancées</h3>
+            <p className="text-gray-600">Cette section sera bientôt disponible.</p>
+          </div>
+        );
+
+      case 'settings':
+        return (
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Paramètres système</h3>
+            <p className="text-gray-600">Cette section sera bientôt disponible.</p>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Section non trouvée</h3>
+            <p className="text-gray-600">La section demandée n'existe pas.</p>
+          </div>
+        );
+    }
+  };
 
   return (
-    <AdminLayout user={user}>
-      <div className="space-y-8">
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 sm:p-8 text-white">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold mb-2">
-                Bienvenue, Administrateur
-              </h1>
-              <p className="text-purple-100 text-lg">
-                Voici un aperçu de l'activité de Clicklone
-              </p>
-            </div>
-            <div className="mt-4 sm:mt-0 text-right">
-              <div className="text-3xl font-bold">
-                {new Date().toLocaleDateString('fr-FR', { 
-                  day: '2-digit', 
-                  month: 'short' 
-                })}
-              </div>
-              <div className="text-purple-200 text-sm">
-                {new Date().toLocaleDateString('fr-FR', { 
-                  weekday: 'long' 
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <DashboardStats stats={memoizedStats} />
-
-        {/* Recent Orders */}
-        <RecentOrders orders={memoizedStats.recentOrders} />
-
-        {/* Quick Actions */}
-        <QuickActions />
-      </div>
+    <AdminLayout 
+      user={user} 
+      activeItem={activeAdminSection}
+      onItemClick={handleSectionChange}
+    >
+      {renderContent()}
     </AdminLayout>
   );
 }

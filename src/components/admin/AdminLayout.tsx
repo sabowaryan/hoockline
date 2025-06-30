@@ -20,6 +20,8 @@ import { useAuth } from '../auth/AuthWrapper';
 interface AdminLayoutProps {
   children: ReactNode;
   user: User;
+  activeItem: string;
+  onItemClick: (id: string) => void;
 }
 
 interface SidebarItem {
@@ -27,7 +29,6 @@ interface SidebarItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   href?: string;
-  active?: boolean;
   badge?: string;
 }
 
@@ -35,8 +36,7 @@ const sidebarItems: SidebarItem[] = [
   {
     id: 'dashboard',
     label: 'Tableau de bord',
-    icon: Home,
-    active: true
+    icon: Home
   },
   {
     id: 'users',
@@ -61,6 +61,42 @@ const sidebarItems: SidebarItem[] = [
     icon: Settings
   }
 ];
+
+// Get section info based on active item
+const getSectionInfo = (activeItem: string) => {
+  switch (activeItem) {
+    case 'dashboard':
+      return {
+        title: 'Tableau de bord',
+        description: 'Gestion administrative de Clicklone'
+      };
+    case 'users':
+      return {
+        title: 'Gestion des utilisateurs',
+        description: 'Administration des comptes et permissions'
+      };
+    case 'orders':
+      return {
+        title: 'Gestion des commandes',
+        description: 'Suivi des transactions et paiements'
+      };
+    case 'analytics':
+      return {
+        title: 'Analytiques avancées',
+        description: 'Rapports et statistiques détaillées'
+      };
+    case 'settings':
+      return {
+        title: 'Paramètres système',
+        description: 'Configuration de l\'application'
+      };
+    default:
+      return {
+        title: 'Administration',
+        description: 'Gestion de Clicklone'
+      };
+  }
+};
 
 // Memoized sidebar component to prevent unnecessary re-renders
 const Sidebar = memo(({ 
@@ -160,10 +196,9 @@ const Sidebar = memo(({
   </div>
 ));
 
-export function AdminLayout({ children, user }: AdminLayoutProps) {
+export function AdminLayout({ children, user, activeItem, onItemClick }: AdminLayoutProps) {
   const { userProfile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState('dashboard');
 
   const handleSignOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -174,12 +209,14 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
   }, []);
 
   const handleItemClick = useCallback((id: string) => {
-    setActiveItem(id);
+    onItemClick(id);
     // Close mobile sidebar when item is clicked
     if (window.innerWidth < 1024) {
       setSidebarOpen(false);
     }
-  }, []);
+  }, [onItemClick]);
+
+  const sectionInfo = getSectionInfo(activeItem);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -238,10 +275,10 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
               
               <div className="hidden sm:block">
                 <h2 className="text-xl font-semibold text-gray-900">
-                  Tableau de bord
+                  {sectionInfo.title}
                 </h2>
                 <p className="text-sm text-gray-500">
-                  Gestion administrative de Clicklone
+                  {sectionInfo.description}
                 </p>
               </div>
             </div>
