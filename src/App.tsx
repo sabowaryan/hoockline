@@ -9,6 +9,7 @@ import { Payment } from './components/Payment';
 import { Results } from './components/Results';
 import { SuccessPage } from './components/SuccessPage';
 import { AdminDashboard } from './components/AdminDashboard';
+import { SEOManager } from './components/SEOManager';
 import { trackPageViewDebounced } from './services/analytics';
 
 function AppContent() {
@@ -39,6 +40,7 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
+      <SEOManager />
       <Routes>
         {/* Public routes with Layout */}
         <Route path="/" element={

@@ -8,6 +8,7 @@ import { QuickActions } from './admin/QuickActions';
 import { UsersPage } from './admin/UsersPage';
 import { TrafficPage } from './admin/TrafficPage';
 import { OrdersPage } from './admin/OrdersPage';
+import { SEOManagerPage } from './admin/SEOManagerPage';
 
 interface AdminDashboardProps {
   user: User;
@@ -20,7 +21,7 @@ interface DashboardData {
   recentOrders: any[];
 }
 
-type AdminSection = 'dashboard' | 'traffic' | 'users' | 'orders' | 'analytics' | 'settings';
+type AdminSection = 'dashboard' | 'traffic' | 'users' | 'orders' | 'analytics' | 'seo' | 'settings';
 
 export function AdminDashboard({ user }: AdminDashboardProps) {
   const [data, setData] = useState<DashboardData>({
@@ -209,6 +210,9 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
             <p className="text-gray-600">Cette section sera bientôt disponible.</p>
           </div>
         );
+
+      case 'seo':
+        return <SEOManagerPage />;
 
       case 'settings':
         return (

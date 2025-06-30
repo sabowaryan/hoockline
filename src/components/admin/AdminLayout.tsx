@@ -12,7 +12,8 @@ import {
   Bell,
   Search,
   ChevronDown,
-  BarChart3
+  BarChart3,
+  Globe
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
@@ -63,6 +64,12 @@ const sidebarItems: SidebarItem[] = [
     icon: TrendingUp
   },
   {
+    id: 'seo',
+    label: 'SEO',
+    icon: Globe,
+    badge: 'Nouveau'
+  },
+  {
     id: 'settings',
     label: 'Paramètres',
     icon: Settings
@@ -96,6 +103,11 @@ const getSectionInfo = (activeItem: string) => {
       return {
         title: 'Analytiques avancées',
         description: 'Rapports et statistiques détaillées'
+      };
+    case 'seo':
+      return {
+        title: 'Gestion SEO',
+        description: 'Configuration des paramètres de référencement'
       };
     case 'settings':
       return {
