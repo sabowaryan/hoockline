@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { AuthWrapper, useAuth } from './components/auth/AuthWrapper';
 import { Layout } from './components/Layout';
@@ -9,9 +9,16 @@ import { Payment } from './components/Payment';
 import { Results } from './components/Results';
 import { SuccessPage } from './components/SuccessPage';
 import { AdminDashboard } from './components/AdminDashboard';
+import { trackPageViewDebounced } from './services/analytics';
 
 function AppContent() {
   const { state } = useApp();
+  const location = useLocation();
+
+  // Track page views when location changes
+  useEffect(() => {
+    trackPageViewDebounced(location.pathname);
+  }, [location.pathname]);
 
   switch (state.currentStep) {
     case 'home':

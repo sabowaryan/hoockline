@@ -6,6 +6,7 @@ import { DashboardStats } from './admin/DashboardStats';
 import { RecentOrders } from './admin/RecentOrders';
 import { QuickActions } from './admin/QuickActions';
 import { UsersPage } from './admin/UsersPage';
+import { TrafficPage } from './admin/TrafficPage';
 
 interface AdminDashboardProps {
   user: User;
@@ -18,7 +19,7 @@ interface DashboardData {
   recentOrders: any[];
 }
 
-type AdminSection = 'dashboard' | 'users' | 'orders' | 'analytics' | 'settings';
+type AdminSection = 'dashboard' | 'traffic' | 'users' | 'orders' | 'analytics' | 'settings';
 
 export function AdminDashboard({ user }: AdminDashboardProps) {
   const [data, setData] = useState<DashboardData>({
@@ -190,6 +191,9 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
             <QuickActions />
           </div>
         );
+
+      case 'traffic':
+        return <TrafficPage />;
 
       case 'users':
         return <UsersPage />;

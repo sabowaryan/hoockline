@@ -11,7 +11,8 @@ import {
   Shield,
   Bell,
   Search,
-  ChevronDown
+  ChevronDown,
+  BarChart3
 } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
@@ -37,6 +38,12 @@ const sidebarItems: SidebarItem[] = [
     id: 'dashboard',
     label: 'Tableau de bord',
     icon: Home
+  },
+  {
+    id: 'traffic',
+    label: 'Trafic',
+    icon: BarChart3,
+    badge: 'Nouveau'
   },
   {
     id: 'users',
@@ -69,6 +76,11 @@ const getSectionInfo = (activeItem: string) => {
       return {
         title: 'Tableau de bord',
         description: 'Gestion administrative de Clicklone'
+      };
+    case 'traffic':
+      return {
+        title: 'Statistiques de trafic',
+        description: 'Analyse du trafic et des performances du site'
       };
     case 'users':
       return {
@@ -158,7 +170,11 @@ const Sidebar = memo(({
               <span>{item.label}</span>
             </div>
             {item.badge && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 animate-pulse">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                item.badge === 'Nouveau' 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800 animate-pulse'
+              }`}>
                 {item.badge}
               </span>
             )}
