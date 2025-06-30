@@ -128,6 +128,33 @@ VITE_SUPABASE_URL=votre_url_supabase
 VITE_SUPABASE_ANON_KEY=votre_cle_anon_supabase
 ```
 
+### ⚠️ Configuration Critique des Edge Functions Supabase
+
+**IMPORTANT**: Pour que les paiements fonctionnent, vous DEVEZ configurer les variables d'environnement suivantes dans votre projet Supabase :
+
+#### Étapes obligatoires :
+
+1. **Accédez à votre projet Supabase** → Settings → Edge Functions
+2. **Ajoutez ces variables d'environnement** :
+
+```env
+STRIPE_SECRET_KEY=sk_test_... (ou sk_live_... en production)
+STRIPE_WEBHOOK_SECRET=whsec_... (obtenu lors de la configuration du webhook)
+SUPABASE_SERVICE_ROLE_KEY=eyJ... (clé service_role de votre projet)
+```
+
+3. **Redéployez vos Edge Functions** après avoir ajouté ces variables
+
+#### Comment obtenir ces clés :
+
+- **STRIPE_SECRET_KEY** : Dashboard Stripe → Developers → API keys → Secret key
+- **STRIPE_WEBHOOK_SECRET** : Dashboard Stripe → Developers → Webhooks → Endpoint → Signing secret
+- **SUPABASE_SERVICE_ROLE_KEY** : Supabase Dashboard → Settings → API → service_role key
+
+#### ❌ Erreur commune : HTTP 401 lors du paiement
+
+Si vous obtenez une erreur "Payment error: HTTP 401", cela signifie que la variable `SUPABASE_SERVICE_ROLE_KEY` n'est pas configurée dans vos Edge Functions. Cette clé est OBLIGATOIRE pour que les fonctions puissent interagir avec votre base de données.
+
 ### Lancement en développement
 
 ```bash
@@ -362,7 +389,7 @@ npm run build
 # Les redirections SPA sont configurées dans public/_redirects
 ```
 
-### Variables d'Environnement
+### Variables d'Environnement Frontend
 ```env
 # Google Gemini API
 VITE_GEMINI_API_KEY=your_gemini_api_key_here
@@ -370,17 +397,31 @@ VITE_GEMINI_API_KEY=your_gemini_api_key_here
 # Supabase Configuration
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Stripe Configuration (dans Supabase Edge Functions)
-STRIPE_SECRET_KEY=your_stripe_secret_key
-STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 ```
+
+### ⚠️ Variables d'Environnement Supabase Edge Functions (OBLIGATOIRES)
+
+**CRITIQUE** : Ces variables DOIVENT être configurées dans votre projet Supabase pour que les paiements fonctionnent :
+
+```env
+# Stripe Configuration (dans Supabase Edge Functions)
+STRIPE_SECRET_KEY=sk_test_... # ou sk_live_... en production
+STRIPE_WEBHOOK_SECRET=whsec_... # Secret du webhook Stripe
+
+# Supabase Service Role Key (OBLIGATOIRE pour l'accès à la DB)
+SUPABASE_SERVICE_ROLE_KEY=eyJ... # Clé service_role de votre projet
+```
+
+**Comment configurer** :
+1. Supabase Dashboard → Settings → Edge Functions
+2. Ajouter chaque variable d'environnement
+3. Redéployer les Edge Functions
 
 ### Configuration Supabase
 1. **Créer le projet** Supabase
 2. **Exécuter les migrations** pour créer les tables
 3. **Configurer les Edge Functions** pour Stripe
-4. **Définir les variables d'environnement** Stripe
+4. **⚠️ OBLIGATOIRE : Définir les variables d'environnement** Stripe et Service Role Key
 
 ### Configuration Stripe
 1. **Créer les produits** dans le dashboard Stripe
@@ -403,6 +444,33 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 - **Prettier** pour le formatage automatique
 - **Tests** requis pour les nouvelles fonctionnalités
 - **Documentation** mise à jour pour les changements
+
+## 🔧 Dépannage
+
+### Erreur HTTP 401 lors du paiement
+
+**Symptôme** : `Payment error: HTTP 401` dans la console du navigateur
+
+**Cause** : La variable `SUPABASE_SERVICE_ROLE_KEY` n'est pas configurée dans vos Edge Functions Supabase
+
+**Solution** :
+1. Accédez à votre projet Supabase → Settings → API
+2. Copiez votre `service_role` key (commence par `eyJ...`)
+3. Allez dans Settings → Edge Functions
+4. Ajoutez la variable : `SUPABASE_SERVICE_ROLE_KEY=eyJ...`
+5. Redéployez vos Edge Functions
+
+### Erreur de webhook Stripe
+
+**Symptôme** : Les commandes ne sont pas enregistrées après paiement
+
+**Cause** : Le webhook Stripe n'est pas configuré ou le secret est incorrect
+
+**Solution** :
+1. Dashboard Stripe → Developers → Webhooks
+2. Créez un endpoint vers `https://[votre-projet].supabase.co/functions/v1/stripe-webhook`
+3. Copiez le signing secret
+4. Ajoutez `STRIPE_WEBHOOK_SECRET=whsec_...` dans vos Edge Functions
 
 ## 📝 Licence
 
