@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, Home, RefreshCw, Copy, Download, Star, ArrowRight } from 'lucide-react';
+import { CheckCircle, Home, RefreshCw, Copy, Download, Star, ArrowRight, CreditCard, Calendar, User } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getUserOrders } from '../services/stripe';
-import { products } from '../stripe-config';
+import { products, formatPrice } from '../stripe-config';
 
 export function SuccessPage() {
   const { navigateToHome, navigateToGenerator, state } = useApp();
@@ -48,15 +48,28 @@ export function SuccessPage() {
   const handleDownloadPhrases = () => {
     if (state.generatedPhrases.length === 0) return;
     
-    const content = state.generatedPhrases
-      .map((phrase, index) => `${index + 1}. "${phrase.text}"`)
-      .join('\n\n');
+    const content = [
+      '🎯 Vos phrases d\'accroche Clicklone',
+      '=' .repeat(40),
+      '',
+      `📝 Concept: "${state.generationRequest?.concept}"`,
+      `🎨 Ton: ${state.generationRequest?.tone}`,
+      `🌍 Langue: ${state.generationRequest?.language}`,
+      '',
+      '✨ Vos 10 phrases personnalisées:',
+      '',
+      ...state.generatedPhrases.map((phrase, index) => `${index + 1}. "${phrase.text}"`),
+      '',
+      '---',
+      'Généré par Clicklone - https://clicklone.com',
+      `Date: ${new Date().toLocaleDateString('fr-FR')}`
+    ].join('\n');
     
-    const blob = new Blob([content], { type: 'text/plain' });
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'mes-phrases-accroche-clicklone.txt';
+    a.download = `clicklone-phrases-${Date.now()}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -93,7 +106,7 @@ export function SuccessPage() {
           {orderData && (
             <div className="inline-flex items-center space-x-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm">
               <CheckCircle className="w-4 h-4" />
-              <span>Commande #{orderData.id} • {new Date(orderData.created_at).toLocaleDateString('fr-FR')}</span>
+              <span>Commande #{orderData.order_id} • {new Date(orderData.order_date).toLocaleDateString('fr-FR')}</span>
             </div>
           )}
         </div>
@@ -103,37 +116,79 @@ export function SuccessPage() {
           <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100 mb-8">
             <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6 flex items-center">
               <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                <CheckCircle className="w-5 h-5 text-purple-600" />
+                <CreditCard className="w-5 h-5 text-purple-600" />
               </div>
               Récapitulatif de votre commande
             </h3>
             <div className="grid sm:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Produit</span>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600 flex items-center">
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Produit
+                  </span>
                   <span className="font-semibold text-gray-900">{product.name}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Prix</span>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600 flex items-center">
+                    <span className="w-4 h-4 mr-2">💰</span>
+                    Prix
+                  </span>
                   <span className="font-semibold text-gray-900">
                     ${(orderData.amount_total / 100).toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Statut</span>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600 flex items-center">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Statut
+                  </span>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                     ✅ Payé
                   </span>
                 </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-600 flex items-center">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Date
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {new Date(orderData.order_date).toLocaleDateString('fr-FR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                </div>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-2">Ce que vous recevez :</h4>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>✨ 10 phrases d'accroche uniques</li>
-                  <li>🤖 Générées par IA Gemini</li>
-                  <li>📋 Copie en un clic</li>
-                  <li>💾 Téléchargement possible</li>
-                  <li>🔄 Accès permanent</li>
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                  <Star className="w-4 h-4 text-purple-600 mr-2" />
+                  Ce que vous recevez :
+                </h4>
+                <ul className="text-sm text-gray-600 space-y-2">
+                  <li className="flex items-center">
+                    <CheckCircle className="w-3 h-3 text-green-500 mr-2" />
+                    10 phrases d'accroche uniques
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-3 h-3 text-green-500 mr-2" />
+                    Générées par IA Gemini
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-3 h-3 text-green-500 mr-2" />
+                    Copie en un clic
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-3 h-3 text-green-500 mr-2" />
+                    Téléchargement possible
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-3 h-3 text-green-500 mr-2" />
+                    Accès permanent
+                  </li>
                 </ul>
               </div>
             </div>
@@ -242,14 +297,14 @@ export function SuccessPage() {
         <div className="mt-8 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold">💡</span>
+              <User className="w-6 h-6 text-white" />
             </div>
             <div>
               <p className="text-gray-900 font-medium mb-1">
-                "Clicklone m'a fait gagner des heures de brainstorming !"
+                "Clicklone m'a fait gagner des heures de brainstorming ! Les phrases générées sont parfaites pour mes campagnes."
               </p>
               <p className="text-gray-600 text-sm">
-                - Sarah, Marketing Manager
+                - Sarah M., Marketing Manager
               </p>
             </div>
           </div>

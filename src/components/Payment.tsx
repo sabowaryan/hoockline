@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, CreditCard, Globe, Loader2, ArrowLeft, CheckCircle, Star, Lock } from 'lucide-react';
+import { Shield, CreditCard, Globe, Loader2, ArrowLeft, CheckCircle, Star, Lock, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { createCheckoutSession } from '../services/stripe';
 import { products, formatPrice } from '../stripe-config';
@@ -78,8 +78,11 @@ export function Payment() {
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
             <div className="flex items-center">
-              <div className="w-5 h-5 text-red-600 mr-2">⚠️</div>
-              <p className="text-sm text-red-700">{error}</p>
+              <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
+              <div>
+                <p className="text-sm text-red-700 font-medium">Erreur de paiement</p>
+                <p className="text-sm text-red-600 mt-1">{error}</p>
+              </div>
             </div>
           </div>
         )}
@@ -168,8 +171,27 @@ export function Payment() {
                 Paiement 100% sécurisé
               </div>
               <div className="text-xs sm:text-sm text-green-700">
-                Chiffrement SSL et protection Stripe
+                Chiffrement SSL • Protection Stripe • Aucune donnée stockée
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Methods */}
+        <div className="bg-white rounded-xl p-4 mb-6 border border-gray-100">
+          <h4 className="text-sm font-medium text-gray-900 mb-3">Moyens de paiement acceptés</h4>
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 text-xs text-gray-600">
+              <CreditCard className="w-4 h-4" />
+              <span>Visa</span>
+            </div>
+            <div className="flex items-center space-x-2 text-xs text-gray-600">
+              <CreditCard className="w-4 h-4" />
+              <span>Mastercard</span>
+            </div>
+            <div className="flex items-center space-x-2 text-xs text-gray-600">
+              <CreditCard className="w-4 h-4" />
+              <span>American Express</span>
             </div>
           </div>
         </div>
@@ -198,7 +220,10 @@ export function Payment() {
         </button>
 
         <p className="text-center text-xs sm:text-sm text-gray-500 mt-4">
-          En cliquant sur "Payer", vous acceptez nos conditions d'utilisation
+          En cliquant sur "Payer", vous acceptez nos{' '}
+          <a href="#conditions" className="text-purple-600 hover:underline">
+            conditions d'utilisation
+          </a>
         </p>
 
         {/* Trust indicators */}

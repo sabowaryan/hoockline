@@ -39,19 +39,35 @@ export async function createCheckoutSession(request: CheckoutSessionRequest): Pr
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      
+      // Provide more specific error messages
+      if (response.status === 401) {
+        throw new Error('Erreur d\'authentification. Veuillez réessayer.');
+      } else if (response.status === 400) {
+        throw new Error(errorData.error || 'Paramètres de paiement invalides.');
+      } else if (response.status >= 500) {
+        throw new Error('Erreur serveur. Veuillez réessayer dans quelques instants.');
+      } else {
+        throw new Error(errorData.error || `Erreur HTTP ${response.status}: ${response.statusText}`);
+      }
     }
 
     const data = await response.json();
     
     if (!data.url) {
-      throw new Error('No checkout URL received from server');
+      throw new Error('URL de paiement non reçue du serveur');
     }
 
     return data;
   } catch (error: any) {
     console.error('Stripe checkout error:', error);
-    throw new Error(error.message || 'Failed to create checkout session');
+    
+    // Network errors
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('Erreur de connexion. Vérifiez votre connexion internet.');
+    }
+    
+    throw new Error(error.message || 'Échec de la création de la session de paiement');
   }
 }
 
@@ -89,4 +105,25 @@ export async function getUserOrders() {
     console.error('Error fetching user orders:', error);
     throw error;
   }
+}
+
+// Helper function to check if Stripe is properly configured
+export function isStripeConfigured(): boolean {
+  return !!(
+    import.meta.env.VITE_SUPABASE_URL &&
+    import.meta.env.VITE_SUPABASE_ANON_KEY
+  );
+}
+
+// Helper function to validate price format
+export function validatePrice(price: number): boolean {
+  return typeof price === 'number' && price > 0 && Number.isFinite(price);
+}
+
+// Helper function to format currency
+export function formatCurrency(amount: number, currency: string = 'USD'): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
+  }).format(amount);
 }
