@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Users, CreditCard, DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 interface DashboardStatsProps {
@@ -21,7 +21,7 @@ interface StatCardProps {
   color: 'blue' | 'green' | 'purple' | 'orange';
 }
 
-function StatCard({ title, value, change, icon: Icon, color }: StatCardProps) {
+const StatCard = memo(({ title, value, change, icon: Icon, color }: StatCardProps) => {
   const colorClasses = {
     blue: 'bg-blue-100 text-blue-600',
     green: 'bg-green-100 text-green-600',
@@ -55,9 +55,9 @@ function StatCard({ title, value, change, icon: Icon, color }: StatCardProps) {
       </div>
     </div>
   );
-}
+});
 
-export function DashboardStats({ stats }: DashboardStatsProps) {
+export const DashboardStats = memo(({ stats }: DashboardStatsProps) => {
   const conversionRate = stats.totalUsers > 0 ? ((stats.totalOrders / stats.totalUsers) * 100) : 0;
 
   return (
@@ -95,4 +95,4 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
       />
     </div>
   );
-}
+});

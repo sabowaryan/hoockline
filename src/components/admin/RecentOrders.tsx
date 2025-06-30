@@ -1,11 +1,58 @@
-import React from 'react';
-import { MoreHorizontal, Eye, Download } from 'lucide-react';
+import React, { memo } from 'react';
+import { MoreHorizontal, Eye, Download, CreditCard } from 'lucide-react';
 
 interface RecentOrdersProps {
   orders: any[];
 }
 
-export function RecentOrders({ orders }: RecentOrdersProps) {
+const OrderRow = memo(({ order, index }: { order: any; index: number }) => (
+  <tr className="hover:bg-gray-50">
+    <td className="px-6 py-4 whitespace-nowrap">
+      <div className="text-sm font-medium text-gray-900">
+        #{order.id || `ORD-${index + 1}`}
+      </div>
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+      {new Date(order.created_at).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      })}
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <div className="text-sm font-medium text-gray-900">
+        ${(order.amount_total / 100).toFixed(2)}
+      </div>
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+        order.status === 'completed' 
+          ? 'bg-green-100 text-green-800' 
+          : order.status === 'pending'
+          ? 'bg-yellow-100 text-yellow-800'
+          : 'bg-red-100 text-red-800'
+      }`}>
+        {order.status === 'completed' ? 'Terminée' : 
+         order.status === 'pending' ? 'En attente' : 'Annulée'}
+      </span>
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <div className="flex items-center space-x-2">
+        <button className="text-gray-400 hover:text-gray-600 p-1 rounded">
+          <Eye className="w-4 h-4" />
+        </button>
+        <button className="text-gray-400 hover:text-gray-600 p-1 rounded">
+          <Download className="w-4 h-4" />
+        </button>
+        <button className="text-gray-400 hover:text-gray-600 p-1 rounded">
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+      </div>
+    </td>
+  </tr>
+));
+
+export const RecentOrders = memo(({ orders }: RecentOrdersProps) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
       <div className="px-6 py-4 border-b border-gray-200">
@@ -41,50 +88,7 @@ export function RecentOrders({ orders }: RecentOrdersProps) {
           <tbody className="bg-white divide-y divide-gray-200">
             {orders.length > 0 ? (
               orders.map((order, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      #{order.order_id || `ORD-${index + 1}`}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(order.created_at).toLocaleDateString('fr-FR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      year: 'numeric'
-                    })}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      ${(order.amount_total / 100).toFixed(2)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      order.status === 'completed' 
-                        ? 'bg-green-100 text-green-800' 
-                        : order.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {order.status === 'completed' ? 'Terminée' : 
-                       order.status === 'pending' ? 'En attente' : 'Annulée'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex items-center space-x-2">
-                      <button className="text-gray-400 hover:text-gray-600 p-1 rounded">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-400 hover:text-gray-600 p-1 rounded">
-                        <Download className="w-4 h-4" />
-                      </button>
-                      <button className="text-gray-400 hover:text-gray-600 p-1 rounded">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                <OrderRow key={order.id || index} order={order} index={index} />
               ))
             ) : (
               <tr>
@@ -101,4 +105,4 @@ export function RecentOrders({ orders }: RecentOrdersProps) {
       </div>
     </div>
   );
-}
+});

@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState, useCallback, memo } from 'react';
 import { 
   Menu, 
   X, 
@@ -62,97 +62,130 @@ const sidebarItems: SidebarItem[] = [
   }
 ];
 
+// Memoized sidebar component to prevent unnecessary re-renders
+const Sidebar = memo(({ 
+  sidebarOpen, 
+  activeItem, 
+  onItemClick, 
+  onToggle, 
+  user, 
+  userProfile, 
+  onSignOut 
+}: {
+  sidebarOpen: boolean;
+  activeItem: string;
+  onItemClick: (id: string) => void;
+  onToggle: () => void;
+  user: User;
+  userProfile: any;
+  onSignOut: () => void;
+}) => (
+  <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+  }`}>
+    {/* Sidebar Header */}
+    <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+      <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg">
+          <Shield className="w-4 h-4 text-white" />
+        </div>
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">Admin Panel</h1>
+          <p className="text-xs text-gray-500">Clicklone</p>
+        </div>
+      </div>
+      <button
+        onClick={onToggle}
+        className="lg:hidden p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+      >
+        <X className="w-5 h-5" />
+      </button>
+    </div>
+
+    {/* Navigation */}
+    <nav className="flex-1 px-4 py-6 space-y-2">
+      {sidebarItems.map((item) => (
+        <button
+          key={item.id}
+          onClick={() => onItemClick(item.id)}
+          className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+            activeItem === item.id
+              ? 'bg-purple-50 text-purple-700 border-r-2 border-purple-600'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <item.icon className={`w-5 h-5 ${
+              activeItem === item.id ? 'text-purple-600' : 'text-gray-400'
+            }`} />
+            <span>{item.label}</span>
+          </div>
+          {item.badge && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              {item.badge}
+            </span>
+          )}
+        </button>
+      ))}
+    </nav>
+
+    {/* User Profile Section */}
+    <div className="border-t border-gray-200 p-4">
+      <div className="flex items-center space-x-3 mb-3">
+        <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+          <span className="text-white text-sm font-medium">
+            {user.email?.charAt(0).toUpperCase()}
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-900 truncate">
+            {user.email}
+          </p>
+          <p className="text-xs text-gray-500 capitalize">
+            {userProfile?.role || 'admin'}
+          </p>
+        </div>
+      </div>
+      <button
+        onClick={onSignOut}
+        className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        <LogOut className="w-4 h-4" />
+        <span>Déconnexion</span>
+      </button>
+    </div>
+  </div>
+));
+
 export function AdminLayout({ children, user }: AdminLayoutProps) {
   const { userProfile } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeItem, setActiveItem] = useState('dashboard');
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     await supabase.auth.signOut();
-  };
+  }, []);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen(prev => !prev);
+  }, []);
+
+  const handleItemClick = useCallback((id: string) => {
+    setActiveItem(id);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        {/* Sidebar Header */}
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg">
-              <Shield className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">Admin Panel</h1>
-              <p className="text-xs text-gray-500">Clicklone</p>
-            </div>
-          </div>
-          <button
-            onClick={toggleSidebar}
-            className="lg:hidden p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          {sidebarItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveItem(item.id)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                activeItem === item.id
-                  ? 'bg-purple-50 text-purple-700 border-r-2 border-purple-600'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <item.icon className={`w-5 h-5 ${
-                  activeItem === item.id ? 'text-purple-600' : 'text-gray-400'
-                }`} />
-                <span>{item.label}</span>
-              </div>
-              {item.badge && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
-
-        {/* User Profile Section */}
-        <div className="border-t border-gray-200 p-4">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">
-                {user.email?.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user.email}
-              </p>
-              <p className="text-xs text-gray-500 capitalize">
-                {userProfile?.role || 'admin'}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Déconnexion</span>
-          </button>
-        </div>
-      </div>
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        activeItem={activeItem}
+        onItemClick={handleItemClick}
+        onToggle={toggleSidebar}
+        user={user}
+        userProfile={userProfile}
+        onSignOut={handleSignOut}
+      />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col lg:ml-0">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { 
   Activity, 
   Settings, 
@@ -17,11 +17,15 @@ interface QuickActionProps {
   onClick?: () => void;
 }
 
-function QuickActionCard({ title, description, icon: Icon, color, onClick }: QuickActionProps) {
+const QuickActionCard = memo(({ title, description, icon: Icon, color, onClick }: QuickActionProps) => {
+  const handleClick = useCallback(() => {
+    onClick?.();
+  }, [onClick]);
+
   return (
     <div 
       className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer group"
-      onClick={onClick}
+      onClick={handleClick}
     >
       <div className="flex items-start space-x-4">
         <div className={`w-12 h-12 ${color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -42,9 +46,9 @@ function QuickActionCard({ title, description, icon: Icon, color, onClick }: Qui
       </div>
     </div>
   );
-}
+});
 
-export function QuickActions() {
+export const QuickActions = memo(() => {
   const actions = [
     {
       title: 'Activité système',
@@ -111,4 +115,4 @@ export function QuickActions() {
       </div>
     </div>
   );
-}
+});
