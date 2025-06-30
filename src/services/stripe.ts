@@ -13,18 +13,21 @@ export interface CheckoutSessionResponse {
 }
 
 export async function createCheckoutSession(request: CheckoutSessionRequest): Promise<CheckoutSessionResponse> {
+  // Get session but don't require authentication for public payments
   const { data: { session } } = await supabase.auth.getSession();
   
-  if (!session?.access_token) {
-    throw new Error('User not authenticated');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  // Only add Authorization header if user is authenticated
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
   }
 
   const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`,
-    },
+    headers,
     body: JSON.stringify({
       price_id: request.priceId,
       mode: request.mode,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Zap, Menu, X, Home, Wand2, HelpCircle, Mail } from 'lucide-react';
+import { Zap, Menu, X, Home, Wand2, HelpCircle, Mail, Shield } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export function Navbar() {
@@ -22,6 +22,10 @@ export function Navbar() {
   const handleGeneratorClick = () => {
     navigateToGenerator();
     closeMobileMenu();
+  };
+
+  const handleAdminClick = () => {
+    window.location.href = '/admin';
   };
 
   return (
@@ -82,6 +86,14 @@ export function Navbar() {
               <Mail className="w-4 h-4" />
               <span>Contact</span>
             </a>
+
+            <button
+              onClick={handleAdminClick}
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            >
+              <Shield className="w-4 h-4" />
+              <span>Admin</span>
+            </button>
           </div>
 
           {/* CTA Button Desktop */}
@@ -152,6 +164,17 @@ export function Navbar() {
                 <Mail className="w-5 h-5" />
                 <span>Contact</span>
               </a>
+
+              <button
+                onClick={() => {
+                  handleAdminClick();
+                  closeMobileMenu();
+                }}
+                className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              >
+                <Shield className="w-5 h-5" />
+                <span>Admin</span>
+              </button>
 
               <div className="pt-4 border-t border-gray-100">
                 <button

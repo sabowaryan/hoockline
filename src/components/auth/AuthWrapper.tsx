@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import { LoginPage } from './LoginPage';
@@ -16,6 +16,22 @@ interface UserProfile {
   role: 'admin' | 'user';
   created_at: string;
   updated_at: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  userProfile: UserProfile | null;
+  loading: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthWrapper');
+  }
+  return context;
 }
 
 export function AuthWrapper({ children }: AuthWrapperProps) {
@@ -78,52 +94,74 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     // The auth state change listener will handle updating the user and profile
   };
 
+  const authContextValue: AuthContextType = {
+    user,
+    userProfile,
+    loading: loading || profileLoading,
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Chargement...</p>
+      <AuthContext.Provider value={authContextValue}>
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Chargement...</p>
+          </div>
         </div>
-      </div>
+      </AuthContext.Provider>
     );
   }
 
   if (!user) {
     if (authMode === 'signup') {
       return (
-        <SignupPage
-          onSwitchToLogin={() => setAuthMode('login')}
-          onSignupSuccess={handleAuthSuccess}
-        />
+        <AuthContext.Provider value={authContextValue}>
+          <SignupPage
+            onSwitchToLogin={() => setAuthMode('login')}
+            onSignupSuccess={handleAuthSuccess}
+          />
+        </AuthContext.Provider>
       );
     }
 
     return (
-      <LoginPage
-        onSwitchToSignup={() => setAuthMode('signup')}
-        onLoginSuccess={handleAuthSuccess}
-      />
+      <AuthContext.Provider value={authContextValue}>
+        <LoginPage
+          onSwitchToSignup={() => setAuthMode('signup')}
+          onLoginSuccess={handleAuthSuccess}
+        />
+      </AuthContext.Provider>
     );
   }
 
   // User is authenticated, check if profile is loading
   if (profileLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Vérification des permissions...</p>
+      <AuthContext.Provider value={authContextValue}>
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Vérification des permissions...</p>
+          </div>
         </div>
-      </div>
+      </AuthContext.Provider>
     );
   }
 
   // Check if user has admin role
   if (!userProfile || userProfile.role !== 'admin') {
-    return <UnauthorizedAccess />;
+    return (
+      <AuthContext.Provider value={authContextValue}>
+        <UnauthorizedAccess />
+      </AuthContext.Provider>
+    );
   }
 
   // User is authenticated and has admin role
-  return <>{children(user)}</>;
+  return (
+    <AuthContext.Provider value={authContextValue}>
+      {children(user)}
+    </AuthContext.Provider>
+  );
 }
