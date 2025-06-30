@@ -39,8 +39,10 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const fetchUserProfile = async (userId: string) => {
+    setProfileLoading(true);
     try {
       console.log('Fetching profile for user:', userId);
       
@@ -53,7 +55,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       if (error) {
         console.error('Error fetching user profile:', error);
         
-        // If profile doesn't exist, create one with default role
+        // Si le profil n'existe pas, créer un profil par défaut
         if (error.code === 'PGRST116') {
           console.log('Profile not found, creating default profile...');
           
@@ -61,7 +63,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             .from('profiles')
             .insert({
               id: userId,
-              role: 'user' // Default role
+              role: 'user' // Rôle par défaut
             })
             .select('id, role, created_at, updated_at')
             .single();
@@ -83,15 +85,18 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     } catch (error) {
       console.error('Unexpected error fetching user profile:', error);
       setUserProfile(null);
+    } finally {
+      setProfileLoading(false);
     }
   };
 
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
-    const getInitialSession = async () => {
+    const initializeAuth = async () => {
       try {
+        console.log('Initializing auth...');
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -103,6 +108,8 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           }
           return;
         }
+
+        console.log('Session:', session?.user?.id || 'No session');
 
         if (mounted) {
           setUser(session?.user ?? null);
@@ -116,7 +123,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           setLoading(false);
         }
       } catch (error) {
-        console.error('Unexpected error in getInitialSession:', error);
+        console.error('Unexpected error in initializeAuth:', error);
         if (mounted) {
           setUser(null);
           setUserProfile(null);
@@ -125,9 +132,9 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       }
     };
 
-    getInitialSession();
+    initializeAuth();
 
-    // Listen for auth changes
+    // Écouter les changements d'authentification
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -142,7 +149,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           setUserProfile(null);
         }
         
-        setLoading(false);
+        // Ne pas définir loading à false ici car fetchUserProfile gère profileLoading
       }
     });
 
@@ -153,28 +160,30 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   }, []);
 
   const handleAuthSuccess = () => {
-    // The auth state change listener will handle updating the user and profile
+    // L'écouteur de changement d'état d'authentification gérera la mise à jour
   };
 
   const authContextValue: AuthContextType = {
     user,
     userProfile,
-    loading,
+    loading: loading || profileLoading,
   };
 
+  // État de chargement initial
   if (loading) {
     return (
       <AuthContext.Provider value={authContextValue}>
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Chargement...</p>
+            <p className="text-gray-600">Initialisation...</p>
           </div>
         </div>
       </AuthContext.Provider>
     );
   }
 
+  // Utilisateur non connecté
   if (!user) {
     if (authMode === 'signup') {
       return (
@@ -197,7 +206,21 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     );
   }
 
-  // User is authenticated, check if profile exists and has admin role
+  // Chargement du profil utilisateur
+  if (profileLoading) {
+    return (
+      <AuthContext.Provider value={authContextValue}>
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Vérification des permissions...</p>
+          </div>
+        </div>
+      </AuthContext.Provider>
+    );
+  }
+
+  // Erreur de profil utilisateur
   if (!userProfile) {
     return (
       <AuthContext.Provider value={authContextValue}>
@@ -212,19 +235,27 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             <p className="text-gray-600 mb-4">
               Impossible de charger votre profil. Veuillez contacter l'administrateur.
             </p>
-            <button
-              onClick={() => supabase.auth.signOut()}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Se déconnecter
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mr-2"
+              >
+                Réessayer
+              </button>
+              <button
+                onClick={() => supabase.auth.signOut()}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Se déconnecter
+              </button>
+            </div>
           </div>
         </div>
       </AuthContext.Provider>
     );
   }
 
-  // Check if user has admin role
+  // Vérifier si l'utilisateur a le rôle admin
   if (userProfile.role !== 'admin') {
     return (
       <AuthContext.Provider value={authContextValue}>
@@ -233,7 +264,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     );
   }
 
-  // User is authenticated and has admin role
+  // Utilisateur authentifié avec rôle admin
   return (
     <AuthContext.Provider value={authContextValue}>
       {children(user)}

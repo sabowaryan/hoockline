@@ -29,10 +29,19 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
 
       if (error) {
         console.error('Login error:', error);
-        setError(error.message);
+        
+        // Messages d'erreur plus conviviaux
+        if (error.message.includes('Invalid login credentials')) {
+          setError('Email ou mot de passe incorrect');
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('Veuillez confirmer votre email avant de vous connecter');
+        } else {
+          setError(error.message);
+        }
       } else if (data.user) {
         console.log('Login successful for user:', data.user.id);
-        onLoginSuccess();
+        // Ne pas appeler onLoginSuccess ici, laisser l'AuthWrapper gérer
+        // onLoginSuccess sera appelé automatiquement par le changement d'état
       } else {
         setError('Connexion échouée - aucun utilisateur retourné');
       }
@@ -44,7 +53,7 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
     }
   };
 
-  // Quick admin login for testing (remove in production)
+  // Fonction de test pour remplir automatiquement les identifiants admin
   const handleQuickAdminLogin = async () => {
     setEmail('admin@clicklone.com');
     setPassword('admin123');
@@ -153,7 +162,7 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
             </button>
           </div>
 
-          {/* Development helper - remove in production */}
+          {/* Helper pour les tests - à supprimer en production */}
           <div className="text-center">
             <button
               type="button"
