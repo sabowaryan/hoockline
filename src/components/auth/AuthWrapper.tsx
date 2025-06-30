@@ -42,7 +42,6 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   
   // Use refs to prevent infinite loops
   const initialized = useRef(false);
-  const profileLoaded = useRef(false);
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -84,12 +83,9 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         console.log('Profile found:', data);
         setUserProfile(data);
       }
-      
-      profileLoaded.current = true;
     } catch (error) {
       console.error('Unexpected error fetching user profile:', error);
       setUserProfile(null);
-      profileLoaded.current = true;
     }
   };
 
@@ -127,7 +123,6 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             await fetchUserProfile(session.user.id);
           } else {
             setUserProfile(null);
-            profileLoaded.current = true;
           }
           
           setLoading(false);
@@ -152,22 +147,17 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
       
-      if (mounted) {
+      if (mounted && initialized.current) {
+        setLoading(true); // Show loading during profile fetch
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Reset profile loading state
-          profileLoaded.current = false;
           await fetchUserProfile(session.user.id);
         } else {
           setUserProfile(null);
-          profileLoaded.current = true;
         }
         
-        // Only set loading to false if initialization is complete
-        if (initialized.current) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     });
 
@@ -188,17 +178,15 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     loading,
   };
 
-  // Show loading state
-  if (loading || !initialized.current || (user && !profileLoaded.current)) {
+  // Show loading state during initialization or profile fetch
+  if (loading || !initialized.current) {
     return (
       <AuthContext.Provider value={authContextValue}>
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             <p className="text-gray-600">
-              {!initialized.current ? 'Initialisation...' : 
-               user && !profileLoaded.current ? 'Chargement du profil...' : 
-               'Vérification des permissions...'}
+              {!initialized.current ? 'Initialisation...' : 'Chargement du profil...'}
             </p>
           </div>
         </div>
@@ -229,8 +217,8 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     );
   }
 
-  // Profile loading error
-  if (!userProfile && profileLoaded.current) {
+  // Profile loading error - only show if we tried to fetch profile but failed
+  if (user && !userProfile && initialized.current && !loading) {
     return (
       <AuthContext.Provider value={authContextValue}>
         <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center">
@@ -247,7 +235,6 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             <div className="space-y-2">
               <button
                 onClick={() => {
-                  profileLoaded.current = false;
                   initialized.current = false;
                   window.location.reload();
                 }}
@@ -286,7 +273,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     );
   }
 
-  // Fallback loading state (should rarely be reached)
+  // Final fallback - should not happen but prevents infinite loading
   return (
     <AuthContext.Provider value={authContextValue}>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
