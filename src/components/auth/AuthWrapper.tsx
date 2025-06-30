@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import { LoginPage } from './LoginPage';
@@ -39,10 +39,17 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
-  const [profileLoading, setProfileLoading] = useState(false);
+  
+  // Utiliser des refs pour éviter les boucles infinies
+  const initializationDone = useRef(false);
+  const profileFetched = useRef(false);
 
-  const fetchUserProfile = async (userId: string) => {
-    setProfileLoading(true);
+  const fetchUserProfile = async (userId: string, force = false) => {
+    // Éviter de refetch si déjà fait, sauf si forcé
+    if (profileFetched.current && !force) {
+      return;
+    }
+
     try {
       console.log('Fetching profile for user:', userId);
       
@@ -74,6 +81,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           } else {
             console.log('Created new profile:', newProfile);
             setUserProfile(newProfile);
+            profileFetched.current = true;
           }
         } else {
           setUserProfile(null);
@@ -81,16 +89,20 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       } else {
         console.log('Profile found:', data);
         setUserProfile(data);
+        profileFetched.current = true;
       }
     } catch (error) {
       console.error('Unexpected error fetching user profile:', error);
       setUserProfile(null);
-    } finally {
-      setProfileLoading(false);
     }
   };
 
   useEffect(() => {
+    // Éviter la double initialisation
+    if (initializationDone.current) {
+      return;
+    }
+
     let mounted = true;
 
     const initializeAuth = async () => {
@@ -105,6 +117,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             setUser(null);
             setUserProfile(null);
             setLoading(false);
+            initializationDone.current = true;
           }
           return;
         }
@@ -118,9 +131,11 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             await fetchUserProfile(session.user.id);
           } else {
             setUserProfile(null);
+            profileFetched.current = false;
           }
           
           setLoading(false);
+          initializationDone.current = true;
         }
       } catch (error) {
         console.error('Unexpected error in initializeAuth:', error);
@@ -128,6 +143,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           setUser(null);
           setUserProfile(null);
           setLoading(false);
+          initializationDone.current = true;
         }
       }
     };
@@ -144,12 +160,18 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchUserProfile(session.user.id);
+          // Reset le flag pour permettre le fetch du profil
+          profileFetched.current = false;
+          await fetchUserProfile(session.user.id, true);
         } else {
           setUserProfile(null);
+          profileFetched.current = false;
         }
         
-        // Ne pas définir loading à false ici car fetchUserProfile gère profileLoading
+        // Seulement définir loading à false si l'initialisation est terminée
+        if (initializationDone.current) {
+          setLoading(false);
+        }
       }
     });
 
@@ -157,16 +179,17 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // Dépendances vides pour éviter les re-exécutions
 
   const handleAuthSuccess = () => {
     // L'écouteur de changement d'état d'authentification gérera la mise à jour
+    console.log('Auth success handled by state listener');
   };
 
   const authContextValue: AuthContextType = {
     user,
     userProfile,
-    loading: loading || profileLoading,
+    loading,
   };
 
   // État de chargement initial
@@ -176,7 +199,9 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Initialisation...</p>
+            <p className="text-gray-600">
+              {!initializationDone.current ? 'Initialisation...' : 'Vérification des permissions...'}
+            </p>
           </div>
         </div>
       </AuthContext.Provider>
@@ -206,22 +231,8 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     );
   }
 
-  // Chargement du profil utilisateur
-  if (profileLoading) {
-    return (
-      <AuthContext.Provider value={authContextValue}>
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-600">Vérification des permissions...</p>
-          </div>
-        </div>
-      </AuthContext.Provider>
-    );
-  }
-
   // Erreur de profil utilisateur
-  if (!userProfile) {
+  if (!userProfile && profileFetched.current) {
     return (
       <AuthContext.Provider value={authContextValue}>
         <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center">
@@ -237,7 +248,11 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             </p>
             <div className="space-y-2">
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  profileFetched.current = false;
+                  initializationDone.current = false;
+                  window.location.reload();
+                }}
                 className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mr-2"
               >
                 Réessayer
@@ -256,7 +271,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   }
 
   // Vérifier si l'utilisateur a le rôle admin
-  if (userProfile.role !== 'admin') {
+  if (userProfile && userProfile.role !== 'admin') {
     return (
       <AuthContext.Provider value={authContextValue}>
         <UnauthorizedAccess />
@@ -265,9 +280,23 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   }
 
   // Utilisateur authentifié avec rôle admin
+  if (userProfile && userProfile.role === 'admin') {
+    return (
+      <AuthContext.Provider value={authContextValue}>
+        {children(user)}
+      </AuthContext.Provider>
+    );
+  }
+
+  // État de chargement du profil (ne devrait pas arriver souvent)
   return (
     <AuthContext.Provider value={authContextValue}>
-      {children(user)}
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Chargement du profil...</p>
+        </div>
+      </div>
     </AuthContext.Provider>
   );
 }

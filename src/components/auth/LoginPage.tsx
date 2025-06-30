@@ -35,13 +35,15 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
           setError('Email ou mot de passe incorrect');
         } else if (error.message.includes('Email not confirmed')) {
           setError('Veuillez confirmer votre email avant de vous connecter');
+        } else if (error.message.includes('Too many requests')) {
+          setError('Trop de tentatives de connexion. Veuillez patienter quelques minutes.');
         } else {
           setError(error.message);
         }
       } else if (data.user) {
         console.log('Login successful for user:', data.user.id);
         // Ne pas appeler onLoginSuccess ici, laisser l'AuthWrapper gérer
-        // onLoginSuccess sera appelé automatiquement par le changement d'état
+        // La redirection se fera automatiquement via le changement d'état d'auth
       } else {
         setError('Connexion échouée - aucun utilisateur retourné');
       }
@@ -54,7 +56,7 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
   };
 
   // Fonction de test pour remplir automatiquement les identifiants admin
-  const handleQuickAdminLogin = async () => {
+  const handleQuickAdminLogin = () => {
     setEmail('admin@clicklone.com');
     setPassword('admin123');
     setError(null);
@@ -64,6 +66,9 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
+          <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl mx-auto mb-4">
+            <span className="text-white text-2xl font-bold">C</span>
+          </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
             Connexion Administrateur
           </h2>
@@ -130,6 +135,7 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 text-gray-400" />
@@ -144,9 +150,9 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !email.trim() || !password.trim()}
               className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white ${
-                isLoading
+                isLoading || !email.trim() || !password.trim()
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:shadow-lg hover:shadow-purple-500/25 transform hover:scale-105'
               } transition-all duration-200`}
@@ -167,9 +173,10 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
             <button
               type="button"
               onClick={handleQuickAdminLogin}
-              className="text-xs text-gray-500 hover:text-gray-700 underline"
+              className="text-xs text-purple-600 hover:text-purple-700 underline"
+              disabled={isLoading}
             >
-              Test: Remplir identifiants admin
+              🧪 Test: Remplir identifiants admin
             </button>
           </div>
 
