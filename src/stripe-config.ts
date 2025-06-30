@@ -24,7 +24,7 @@ export const products: Product[] = [
     badge: 'Populaire',
     features: [
       '10 phrases d\'accroche uniques',
-      'Générées par IA Gemini',
+      'Générées par IA ',
       '6 tons différents disponibles',
       '6 langues supportées',
       'Copie en un clic',
