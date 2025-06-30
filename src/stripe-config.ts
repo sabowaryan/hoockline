@@ -11,7 +11,7 @@ export interface Product {
 
 export const products: Product[] = [
   {
-    id: 'prod_SahUAARvVVXQLg',
+    id: 'prod_SagJP1NwHCDpkC',
     priceId: 'price_1RfW5rPPWwWvhRQtcWbx0KuY',
     name: 'Hookline',
     description: 'Pack de 10 phrases d\'accroche personnalisées générées par IA',
