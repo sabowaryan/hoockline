@@ -7,6 +7,7 @@ import { RecentOrders } from './admin/RecentOrders';
 import { QuickActions } from './admin/QuickActions';
 import { UsersPage } from './admin/UsersPage';
 import { TrafficPage } from './admin/TrafficPage';
+import { OrdersPage } from './admin/OrdersPage';
 
 interface AdminDashboardProps {
   user: User;
@@ -199,12 +200,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
         return <UsersPage />;
 
       case 'orders':
-        return (
-          <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 text-center">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Gestion des commandes</h3>
-            <p className="text-gray-600">Cette section sera bientôt disponible.</p>
-          </div>
-        );
+        return <OrdersPage />;
 
       case 'analytics':
         return (
