@@ -1,11 +1,18 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
-import { createHash } from 'node:crypto';
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '', 
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-);
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+if (!supabaseUrl) {
+  throw new Error('SUPABASE_URL environment variable is required');
+}
+
+if (!supabaseServiceKey) {
+  throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is required');
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Helper function to create responses with CORS headers
 function corsResponse(body: string | object | null, status = 200) {
@@ -30,12 +37,25 @@ function corsResponse(body: string | object | null, status = 200) {
 
 // Helper function to hash IP address for privacy
 function hashIP(ip: string): string {
-  return createHash('sha256').update(ip + 'clicklone-salt').digest('hex').substring(0, 16);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(ip + 'clicklone-salt');
+  return crypto.subtle.digest('SHA-256', data).then(hashBuffer => {
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex.substring(0, 16);
+  });
 }
 
 // Helper function to generate session ID
 function generateSessionId(): string {
-  return createHash('sha256').update(Date.now().toString() + Math.random().toString()).digest('hex').substring(0, 32);
+  const timestamp = Date.now().toString();
+  const random = Math.random().toString(36).substring(2);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(timestamp + random);
+  return crypto.subtle.digest('SHA-256', data).then(hashBuffer => {
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32);
+  });
 }
 
 Deno.serve(async (req) => {
@@ -48,7 +68,16 @@ Deno.serve(async (req) => {
       return corsResponse({ error: 'Method not allowed' }, 405);
     }
 
-    const { page_path, referrer, session_id } = await req.json();
+    const requestBody = await req.json().catch(() => ({}));
+    const { 
+      page_path, 
+      referrer, 
+      session_id,
+      traffic_source,
+      utm_campaign,
+      utm_medium,
+      utm_content 
+    } = requestBody;
 
     if (!page_path || typeof page_path !== 'string') {
       return corsResponse({ error: 'page_path is required and must be a string' }, 400);
@@ -58,15 +87,30 @@ Deno.serve(async (req) => {
     const userAgent = req.headers.get('user-agent') || '';
     const clientIP = req.headers.get('x-forwarded-for') || 
                      req.headers.get('x-real-ip') || 
+                     req.headers.get('cf-connecting-ip') ||
                      'unknown';
 
-    // Hash IP for privacy
-    const ipHash = hashIP(clientIP);
+    // Hash IP for privacy (synchronous fallback)
+    let ipHash: string;
+    try {
+      ipHash = await hashIP(clientIP);
+    } catch (error) {
+      // Fallback to simple hash if crypto.subtle fails
+      ipHash = btoa(clientIP + 'clicklone-salt').substring(0, 16);
+    }
 
     // Use provided session_id or generate new one
-    const finalSessionId = session_id || generateSessionId();
+    let finalSessionId = session_id;
+    if (!finalSessionId) {
+      try {
+        finalSessionId = await generateSessionId();
+      } catch (error) {
+        // Fallback session ID generation
+        finalSessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
+      }
+    }
 
-    // Insert page view
+    // Insert page view with enhanced data
     const { error } = await supabase
       .from('page_views')
       .insert({
@@ -74,12 +118,19 @@ Deno.serve(async (req) => {
         user_agent: userAgent.substring(0, 500), // Limit length
         referrer: referrer ? referrer.substring(0, 500) : null,
         ip_hash: ipHash,
-        session_id: finalSessionId
+        session_id: finalSessionId,
+        traffic_source: traffic_source ? traffic_source.substring(0, 100) : null,
+        utm_campaign: utm_campaign ? utm_campaign.substring(0, 100) : null,
+        utm_medium: utm_medium ? utm_medium.substring(0, 100) : null,
+        utm_content: utm_content ? utm_content.substring(0, 100) : null
       });
 
     if (error) {
       console.error('Error inserting page view:', error);
-      return corsResponse({ error: 'Failed to track page view' }, 500);
+      return corsResponse({ 
+        error: 'Failed to track page view',
+        details: error.message 
+      }, 500);
     }
 
     return corsResponse({ 
@@ -89,6 +140,9 @@ Deno.serve(async (req) => {
 
   } catch (error: any) {
     console.error('Track page view error:', error);
-    return corsResponse({ error: error.message }, 500);
+    return corsResponse({ 
+      error: 'Internal server error',
+      message: error.message 
+    }, 500);
   }
 });
