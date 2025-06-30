@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, Home, RefreshCw, Download, Copy } from 'lucide-react';
+import { CheckCircle, Home, RefreshCw, Copy, Download, Star, ArrowRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getUserOrders } from '../services/stripe';
+import { products } from '../stripe-config';
 
 export function SuccessPage() {
   const { navigateToHome, navigateToGenerator, state } = useApp();
   const [isLoading, setIsLoading] = useState(true);
   const [orderData, setOrderData] = useState<any>(null);
+  const [copiedPhrases, setCopiedPhrases] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchOrderData = async () => {
@@ -25,12 +27,40 @@ export function SuccessPage() {
     fetchOrderData();
   }, []);
 
-  const handleCopyPhrase = async (phrase: string) => {
+  const handleCopyPhrase = async (phrase: string, phraseId: string) => {
     try {
       await navigator.clipboard.writeText(phrase);
+      setCopiedPhrases(prev => new Set(prev).add(phraseId));
+      
+      // Reset copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedPhrases(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(phraseId);
+          return newSet;
+        });
+      }, 2000);
     } catch (err) {
       console.error('Failed to copy phrase:', err);
     }
+  };
+
+  const handleDownloadPhrases = () => {
+    if (state.generatedPhrases.length === 0) return;
+    
+    const content = state.generatedPhrases
+      .map((phrase, index) => `${index + 1}. "${phrase.text}"`)
+      .join('\n\n');
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'mes-phrases-accroche-clicklone.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   if (isLoading) {
@@ -44,23 +74,26 @@ export function SuccessPage() {
     );
   }
 
+  const product = products[0]; // Hookline product
+
   return (
     <div className="py-6 sm:py-8">
       <div className="max-w-4xl mx-auto">
         {/* Success Header */}
         <div className="text-center mb-8 sm:mb-12">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-            <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-green-600" />
+          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+            <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 text-green-600" />
           </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Paiement réussi !
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            🎉 Paiement réussi !
           </h1>
-          <p className="text-base sm:text-lg text-gray-600 mb-2 px-4 sm:px-0">
-            Votre pack de phrases d'accroche a été débloqué avec succès.
+          <p className="text-lg sm:text-xl text-gray-600 mb-4 px-4 sm:px-0">
+            Votre pack <span className="font-semibold text-purple-600">{product.name}</span> a été débloqué avec succès
           </p>
           {orderData && (
-            <div className="text-sm text-gray-500">
-              Commande #{orderData.order_id} • {new Date(orderData.order_date).toLocaleDateString('fr-FR')}
+            <div className="inline-flex items-center space-x-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm">
+              <CheckCircle className="w-4 h-4" />
+              <span>Commande #{orderData.id} • {new Date(orderData.created_at).toLocaleDateString('fr-FR')}</span>
             </div>
           )}
         </div>
@@ -68,21 +101,40 @@ export function SuccessPage() {
         {/* Order Summary */}
         {orderData && (
           <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-gray-100 mb-8">
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                <CheckCircle className="w-5 h-5 text-purple-600" />
+              </div>
               Récapitulatif de votre commande
             </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Pack de phrases d'accroche</span>
-                <span className="font-semibold text-gray-900">
-                  ${(orderData.amount_total / 100).toFixed(2)}
-                </span>
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Produit</span>
+                  <span className="font-semibold text-gray-900">{product.name}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Prix</span>
+                  <span className="font-semibold text-gray-900">
+                    ${(orderData.amount_total / 100).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Statut</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    ✅ Payé
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Statut du paiement</span>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {orderData.payment_status}
-                </span>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-2">Ce que vous recevez :</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>✨ 10 phrases d'accroche uniques</li>
+                  <li>🤖 Générées par IA Gemini</li>
+                  <li>📋 Copie en un clic</li>
+                  <li>💾 Téléchargement possible</li>
+                  <li>🔄 Accès permanent</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -91,14 +143,29 @@ export function SuccessPage() {
         {/* Generated Phrases */}
         {state.generatedPhrases.length > 0 && (
           <div className="mb-8 sm:mb-12">
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 text-center">
-              Vos phrases d'accroche personnalisées
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+              <div>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+                  Vos phrases d'accroche personnalisées
+                </h3>
+                <p className="text-gray-600">
+                  Générées pour : <span className="font-medium">"{state.generationRequest?.concept}"</span>
+                </p>
+              </div>
+              <button
+                onClick={handleDownloadPhrases}
+                className="mt-4 sm:mt-0 inline-flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                <span>Télécharger tout</span>
+              </button>
+            </div>
+            
             <div className="space-y-3 sm:space-y-4">
               {state.generatedPhrases.map((phrase, index) => (
                 <div
                   key={phrase.id}
-                  className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                  className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all group"
                 >
                   <div className="flex items-start justify-between space-x-3 sm:space-x-4">
                     <div className="flex-1 min-w-0">
@@ -106,17 +173,35 @@ export function SuccessPage() {
                         <span className="text-xs sm:text-sm font-medium text-purple-600 bg-purple-100 px-2 sm:px-3 py-1 rounded-full">
                           #{index + 1}
                         </span>
+                        <div className="flex items-center space-x-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className="w-3 h-3 text-yellow-400 fill-current" />
+                          ))}
+                        </div>
                       </div>
-                      <blockquote className="text-base sm:text-lg font-medium text-gray-900 leading-relaxed break-words">
+                      <blockquote className="text-base sm:text-lg font-medium text-gray-900 leading-relaxed break-words group-hover:text-purple-700 transition-colors">
                         "{phrase.text}"
                       </blockquote>
                     </div>
                     <button
-                      onClick={() => handleCopyPhrase(phrase.text)}
-                      className="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all flex-shrink-0"
+                      onClick={() => handleCopyPhrase(phrase.text, phrase.id)}
+                      className={`flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 rounded-lg transition-all flex-shrink-0 ${
+                        copiedPhrases.has(phrase.id)
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-600 hover:bg-purple-100 hover:text-purple-700'
+                      }`}
                     >
-                      <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="text-xs sm:text-sm font-medium hidden sm:inline">Copier</span>
+                      {copiedPhrases.has(phrase.id) ? (
+                        <>
+                          <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="text-xs sm:text-sm font-medium hidden sm:inline">Copié !</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="text-xs sm:text-sm font-medium hidden sm:inline">Copier</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -128,19 +213,20 @@ export function SuccessPage() {
         {/* Next Steps */}
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 sm:p-8 text-center text-white">
           <h3 className="text-xl sm:text-2xl font-bold mb-4">
-            Prêt à conquérir le monde !
+            🚀 Prêt à conquérir le monde !
           </h3>
           <p className="text-purple-100 mb-6 text-base sm:text-lg">
             Utilisez ces phrases pour vos titres, vos slogans ou vos posts. 
-            Revenez quand vous le souhaitez pour générer de nouvelles accroches !
+            Revenez quand vous le souhaitez pour générer de nouvelles accroches dans d'autres langues !
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <button
               onClick={navigateToGenerator}
-              className="inline-flex items-center justify-center space-x-2 bg-white text-purple-600 px-4 sm:px-6 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+              className="inline-flex items-center justify-center space-x-2 bg-white text-purple-600 px-4 sm:px-6 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors group"
             >
-              <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
+              <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-180 transition-transform duration-500" />
               <span>Générer d'autres phrases</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
               onClick={navigateToHome}
@@ -149,6 +235,23 @@ export function SuccessPage() {
               <Home className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Retour à l'accueil</span>
             </button>
+          </div>
+        </div>
+
+        {/* Testimonial */}
+        <div className="mt-8 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold">💡</span>
+            </div>
+            <div>
+              <p className="text-gray-900 font-medium mb-1">
+                "Clicklone m'a fait gagner des heures de brainstorming !"
+              </p>
+              <p className="text-gray-600 text-sm">
+                - Sarah, Marketing Manager
+              </p>
+            </div>
           </div>
         </div>
       </div>

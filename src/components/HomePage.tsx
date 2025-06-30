@@ -1,16 +1,17 @@
 import React from 'react';
-import { Zap, ArrowRight, Sparkles, Target, Lightbulb } from 'lucide-react';
+import { Zap, ArrowRight, Sparkles, Target, Lightbulb, CheckCircle, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { products } from '../stripe-config';
 
 const examples = [
   {
     concept: "Application de méditation",
-    tone: "audacieux",
+    tone: "humoristique",
     hookline: "Détendez-vous ou la vie vous mordra."
   },
   {
     concept: "Application de méditation",
-    tone: "minimaliste",
+    tone: "inspirant",
     hookline: "Respirez. Créez. Répétez."
   },
   {
@@ -27,6 +28,7 @@ const examples = [
 
 export function HomePage() {
   const { navigateToGenerator } = useApp();
+  const product = products[0]; // Hookline product
 
   return (
     <>
@@ -55,6 +57,19 @@ export function HomePage() {
             adaptés à votre concept et votre ton en quelques secondes.
           </p>
 
+          {/* Pricing highlight */}
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 mb-8 text-white max-w-md mx-auto">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <Star className="w-5 h-5 text-yellow-300 fill-current" />
+              <span className="font-semibold">Offre de lancement</span>
+              <Star className="w-5 h-5 text-yellow-300 fill-current" />
+            </div>
+            <div className="text-3xl font-bold mb-2">${product.price}</div>
+            <div className="text-purple-100 text-sm">
+              Pour 10 phrases d'accroche personnalisées
+            </div>
+          </div>
+
           <button
             onClick={navigateToGenerator}
             className="group inline-flex items-center space-x-2 sm:space-x-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-200 transform hover:scale-105"
@@ -62,6 +77,22 @@ export function HomePage() {
             <span>Générer ma phrase d'accroche</span>
             <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
           </button>
+
+          {/* Trust indicators */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span>Paiement sécurisé</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span>Accès immédiat</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              <span>IA Gemini</span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -149,6 +180,24 @@ export function HomePage() {
               Copiez-collez directement vos phrases favorites où vous voulez
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-12 sm:py-16">
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 sm:p-12 text-center text-white max-w-4xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+            Prêt à créer des phrases qui convertissent ?
+          </h2>
+          <p className="text-purple-100 text-lg mb-8">
+            Rejoignez les entrepreneurs qui utilisent déjà Clicklone pour booster leurs ventes
+          </p>
+          <button
+            onClick={navigateToGenerator}
+            className="bg-white text-purple-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-purple-50 transition-colors transform hover:scale-105"
+          >
+            Commencer maintenant - ${product.price}
+          </button>
         </div>
       </section>
     </>
