@@ -26,7 +26,7 @@ export async function createCheckoutSession(request: CheckoutSessionRequest): Pr
       headers['Authorization'] = `Bearer ${session.access_token}`;
     }
 
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/stripe-checkout`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
