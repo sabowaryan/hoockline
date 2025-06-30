@@ -112,7 +112,7 @@ export const UsersPage = memo(() => {
         setLoading(true);
         setError(null);
 
-        // Fetch profiles with auth user data
+        // Fetch profiles only (we can't access auth.users with anon key)
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('id, role, created_at, updated_at')
@@ -122,23 +122,18 @@ export const UsersPage = memo(() => {
           throw profilesError;
         }
 
-        // Fetch auth users to get email addresses
-        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+        // For now, we'll work with profiles only
+        // In a production environment, you would need to:
+        // 1. Create a server-side function with service_role access
+        // 2. Or store email in the profiles table
+        // 3. Or use RLS policies with proper permissions
 
-        if (authError) {
-          console.warn('Could not fetch auth users:', authError);
-        }
+        const usersData = profiles?.map(profile => ({
+          ...profile,
+          email: `user-${profile.id.slice(0, 8)}@example.com` // Placeholder email
+        })) || [];
 
-        // Merge profile data with auth user data
-        const usersWithEmails = profiles?.map(profile => {
-          const authUser = authUsers?.users?.find(user => user.id === profile.id);
-          return {
-            ...profile,
-            email: authUser?.email
-          };
-        }) || [];
-
-        setUsers(usersWithEmails);
+        setUsers(usersData);
       } catch (err: any) {
         console.error('Error fetching users:', err);
         setError('Erreur lors du chargement des utilisateurs');
@@ -222,6 +217,22 @@ export const UsersPage = memo(() => {
 
   return (
     <div className="space-y-6">
+      {/* Info Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <div className="flex items-start space-x-3">
+          <div className="w-5 h-5 text-blue-600 mt-0.5">ℹ️</div>
+          <div>
+            <h4 className="text-sm font-medium text-blue-900 mb-1">
+              Gestion des utilisateurs (Version limitée)
+            </h4>
+            <p className="text-sm text-blue-700">
+              Cette version affiche les profils utilisateurs. Pour accéder aux emails et fonctionnalités avancées, 
+              une configuration avec clé service_role est nécessaire.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
