@@ -19,7 +19,7 @@ function corsResponse(body: string | object | null, status = 200) {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info',
   };
 
   if (status === 204) {
@@ -36,26 +36,34 @@ function corsResponse(body: string | object | null, status = 200) {
 }
 
 // Helper function to hash IP address for privacy
-function hashIP(ip: string): string {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(ip + 'clicklone-salt');
-  return crypto.subtle.digest('SHA-256', data).then(hashBuffer => {
+async function hashIP(ip: string): Promise<string> {
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(ip + 'clicklone-salt');
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     return hashHex.substring(0, 16);
-  });
+  } catch (error) {
+    // Fallback to simple hash if crypto.subtle fails
+    return btoa(ip + 'clicklone-salt').substring(0, 16);
+  }
 }
 
 // Helper function to generate session ID
-function generateSessionId(): string {
-  const timestamp = Date.now().toString();
-  const random = Math.random().toString(36).substring(2);
-  const encoder = new TextEncoder();
-  const data = encoder.encode(timestamp + random);
-  return crypto.subtle.digest('SHA-256', data).then(hashBuffer => {
+async function generateSessionId(): Promise<string> {
+  try {
+    const timestamp = Date.now().toString();
+    const random = Math.random().toString(36).substring(2);
+    const encoder = new TextEncoder();
+    const data = encoder.encode(timestamp + random);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32);
-  });
+  } catch (error) {
+    // Fallback session ID generation
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -66,6 +74,18 @@ Deno.serve(async (req) => {
 
     if (req.method !== 'POST') {
       return corsResponse({ error: 'Method not allowed' }, 405);
+    }
+
+    // Verify authorization (accept both anon key and service role)
+    const authHeader = req.headers.get('Authorization');
+    const apiKey = req.headers.get('apikey');
+    
+    if (!authHeader && !apiKey) {
+      return corsResponse({ 
+        error: 'Missing authorization header',
+        code: 401,
+        message: 'Authorization header or apikey is required'
+      }, 401);
     }
 
     const requestBody = await req.json().catch(() => ({}));
@@ -90,24 +110,13 @@ Deno.serve(async (req) => {
                      req.headers.get('cf-connecting-ip') ||
                      'unknown';
 
-    // Hash IP for privacy (synchronous fallback)
-    let ipHash: string;
-    try {
-      ipHash = await hashIP(clientIP);
-    } catch (error) {
-      // Fallback to simple hash if crypto.subtle fails
-      ipHash = btoa(clientIP + 'clicklone-salt').substring(0, 16);
-    }
+    // Hash IP for privacy
+    const ipHash = await hashIP(clientIP);
 
     // Use provided session_id or generate new one
     let finalSessionId = session_id;
     if (!finalSessionId) {
-      try {
-        finalSessionId = await generateSessionId();
-      } catch (error) {
-        // Fallback session ID generation
-        finalSessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-      }
+      finalSessionId = await generateSessionId();
     }
 
     // Insert page view with enhanced data

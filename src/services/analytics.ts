@@ -1,4 +1,4 @@
-// Enhanced analytics service with better error handling
+// Enhanced analytics service with proper authentication
 let sessionId: string | null = null;
 
 // Generate a session ID for this browser session
@@ -17,7 +17,7 @@ function generateSessionId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-// Enhanced page view tracking with better error handling
+// Enhanced page view tracking with proper headers
 export async function trackPageView(pagePath: string): Promise<void> {
   try {
     // Don't track admin pages or if in development
@@ -26,8 +26,8 @@ export async function trackPageView(pagePath: string): Promise<void> {
     }
 
     // Check if analytics is properly configured
-    if (!import.meta.env.VITE_SUPABASE_URL) {
-      console.warn('Analytics disabled: VITE_SUPABASE_URL not configured');
+    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      console.warn('Analytics disabled: Supabase configuration missing');
       return;
     }
 
@@ -51,6 +51,8 @@ export async function trackPageView(pagePath: string): Promise<void> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
       },
       body: JSON.stringify(payload),
     });
@@ -76,7 +78,7 @@ export async function trackPageView(pagePath: string): Promise<void> {
   }
 }
 
-// Track conversion events with better error handling
+// Track conversion events with proper authentication
 export async function trackConversionEvent(
   eventType: 'page_view' | 'generator_start' | 'payment_start' | 'payment_complete',
   pagePath?: string,
@@ -91,6 +93,8 @@ export async function trackConversionEvent(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({
         session_id: getSessionId(),
@@ -109,7 +113,7 @@ export async function trackConversionEvent(
   }
 }
 
-// Track time spent on page with better error handling
+// Track time spent on page with proper authentication
 export async function trackTimeSpent(pagePath: string, timeSpentSeconds: number): Promise<void> {
   try {
     if (pagePath.startsWith('/admin') || import.meta.env.DEV || timeSpentSeconds < 5) {
@@ -124,6 +128,8 @@ export async function trackTimeSpent(pagePath: string, timeSpentSeconds: number)
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({
         session_id: getSessionId(),
@@ -237,6 +243,7 @@ export class TimeTracker {
 export function isAnalyticsEnabled(): boolean {
   return !!(
     import.meta.env.VITE_SUPABASE_URL && 
+    import.meta.env.VITE_SUPABASE_ANON_KEY &&
     !import.meta.env.DEV
   );
 }
