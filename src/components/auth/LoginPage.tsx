@@ -20,21 +20,35 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      console.log('Attempting login for:', email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       });
 
       if (error) {
+        console.error('Login error:', error);
         setError(error.message);
-      } else {
+      } else if (data.user) {
+        console.log('Login successful for user:', data.user.id);
         onLoginSuccess();
+      } else {
+        setError('Connexion échouée - aucun utilisateur retourné');
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Unexpected login error:', err);
       setError('Une erreur inattendue s\'est produite');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Quick admin login for testing (remove in production)
+  const handleQuickAdminLogin = async () => {
+    setEmail('admin@clicklone.com');
+    setPassword('admin123');
+    setError(null);
   };
 
   return (
@@ -139,7 +153,17 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
             </button>
           </div>
 
-          {/* Remove signup link for admin-only access */}
+          {/* Development helper - remove in production */}
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={handleQuickAdminLogin}
+              className="text-xs text-gray-500 hover:text-gray-700 underline"
+            >
+              Test: Remplir identifiants admin
+            </button>
+          </div>
+
           <div className="text-center">
             <p className="text-xs text-gray-500">
               Seuls les administrateurs peuvent accéder à cette application.
