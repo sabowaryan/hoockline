@@ -1,4 +1,4 @@
-// Enhanced analytics service with conversion tracking
+// Enhanced analytics service with better error handling
 let sessionId: string | null = null;
 
 // Generate a session ID for this browser session
@@ -17,11 +17,17 @@ function generateSessionId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-// Enhanced page view tracking with traffic source detection
+// Enhanced page view tracking with better error handling
 export async function trackPageView(pagePath: string): Promise<void> {
   try {
     // Don't track admin pages or if in development
     if (pagePath.startsWith('/admin') || import.meta.env.DEV) {
+      return;
+    }
+
+    // Check if analytics is properly configured
+    if (!import.meta.env.VITE_SUPABASE_URL) {
+      console.warn('Analytics disabled: VITE_SUPABASE_URL not configured');
       return;
     }
 
@@ -31,38 +37,53 @@ export async function trackPageView(pagePath: string): Promise<void> {
     // Detect traffic source
     const trafficSource = getTrafficSource(referrer, urlParams);
     
+    const payload = {
+      page_path: pagePath,
+      referrer: referrer || null,
+      session_id: getSessionId(),
+      traffic_source: trafficSource,
+      utm_campaign: urlParams.get('utm_campaign'),
+      utm_medium: urlParams.get('utm_medium'),
+      utm_content: urlParams.get('utm_content'),
+    };
+
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-page-view`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        page_path: pagePath,
-        referrer: referrer || null,
-        session_id: getSessionId(),
-        traffic_source: trafficSource,
-        utm_campaign: urlParams.get('utm_campaign'),
-        utm_medium: urlParams.get('utm_medium'),
-        utm_content: urlParams.get('utm_content'),
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      console.warn('Failed to track page view:', response.statusText);
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.warn(`Failed to track page view (${response.status}):`, errorText);
+      
+      // Don't throw error to avoid breaking the app
+      return;
     }
+
+    const result = await response.json().catch(() => null);
+    if (result?.session_id) {
+      // Update session ID if server provided a new one
+      sessionId = result.session_id;
+      localStorage.setItem('clicklone_session_id', sessionId);
+    }
+
   } catch (error) {
     console.warn('Analytics tracking error:', error);
+    // Don't throw error to avoid breaking the app
   }
 }
 
-// Track conversion events
+// Track conversion events with better error handling
 export async function trackConversionEvent(
   eventType: 'page_view' | 'generator_start' | 'payment_start' | 'payment_complete',
   pagePath?: string,
   metadata?: Record<string, any>
 ): Promise<void> {
   try {
-    if (import.meta.env.DEV) {
+    if (import.meta.env.DEV || !import.meta.env.VITE_SUPABASE_URL) {
       return;
     }
 
@@ -80,17 +101,22 @@ export async function trackConversionEvent(
     });
 
     if (!response.ok) {
-      console.warn('Failed to track conversion event:', response.statusText);
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.warn(`Failed to track conversion event (${response.status}):`, errorText);
     }
   } catch (error) {
     console.warn('Conversion tracking error:', error);
   }
 }
 
-// Track time spent on page
+// Track time spent on page with better error handling
 export async function trackTimeSpent(pagePath: string, timeSpentSeconds: number): Promise<void> {
   try {
     if (pagePath.startsWith('/admin') || import.meta.env.DEV || timeSpentSeconds < 5) {
+      return;
+    }
+
+    if (!import.meta.env.VITE_SUPABASE_URL) {
       return;
     }
 
@@ -108,7 +134,8 @@ export async function trackTimeSpent(pagePath: string, timeSpentSeconds: number)
     });
 
     if (!response.ok) {
-      console.warn('Failed to track time spent:', response.statusText);
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.warn(`Failed to track time spent (${response.status}):`, errorText);
     }
   } catch (error) {
     console.warn('Time tracking error:', error);
