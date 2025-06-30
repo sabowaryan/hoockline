@@ -84,6 +84,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'NAVIGATE_TO_SUCCESS' });
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('canceled') === 'true') {
+      // Handle canceled payment
+      dispatch({ type: 'NAVIGATE_TO_PAYMENT' });
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
 
@@ -103,7 +108,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       // Convert to GeneratedPhrase objects
       const phrases: GeneratedPhrase[] = phraseTexts.map((text, index) => ({
-        id: `phrase-${index + 1}`,
+        id: `phrase-${Date.now()}-${index + 1}`,
         text,
         tone: request.tone
       }));
@@ -114,7 +119,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.error('Error generating phrases with Gemini:', error);
       dispatch({ 
         type: 'GENERATION_ERROR', 
-        payload: 'Erreur lors de la génération. Veuillez réessayer.' 
+        payload: 'Erreur lors de la génération. Veuillez vérifier votre connexion et réessayer.' 
       });
     }
   };
@@ -140,6 +145,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await navigator.clipboard.writeText(phrase);
     } catch (err) {
       console.error('Failed to copy phrase:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = phrase;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed:', fallbackErr);
+      }
+      document.body.removeChild(textArea);
     }
   };
 

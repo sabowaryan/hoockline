@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Wand2, Loader2, ArrowRight, AlertTriangle, Globe } from 'lucide-react';
+import { ArrowLeft, Wand2, Loader2, ArrowRight, AlertTriangle, Globe, CheckCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Tone } from '../types';
+import { products } from '../stripe-config';
 
 const tones: { value: Tone; label: string; description: string }[] = [
   { value: 'humoristique', label: 'Humoristique', description: 'Amusant et décalé' },
@@ -27,6 +28,8 @@ export function Generator() {
   const [selectedTone, setSelectedTone] = useState<Tone>('inspirant');
   const [selectedLanguage, setSelectedLanguage] = useState('fr');
 
+  const product = products[0]; // Hookline product
+
   const handleGenerate = async () => {
     if (!concept.trim()) return;
     
@@ -47,9 +50,15 @@ export function Generator() {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Créons vos phrases d'accroche
           </h1>
-          <p className="text-base sm:text-lg text-gray-600 px-4 sm:px-0">
+          <p className="text-base sm:text-lg text-gray-600 px-4 sm:px-0 mb-4">
             Décrivez votre concept et choisissez le ton qui vous correspond
           </p>
+          
+          {/* Pricing Info */}
+          <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 px-4 py-2 rounded-full text-sm font-medium">
+            <CheckCircle className="w-4 h-4" />
+            <span>Seulement ${product.price} pour 10 phrases personnalisées</span>
+          </div>
           
           {/* AI Status Indicator */}
           <div className="mt-4 flex justify-center">
@@ -181,24 +190,40 @@ export function Generator() {
 
           {/* Success Message & Payment Button */}
           {hasGenerated && (
-            <div className="bg-green-50 border border-green-200 rounded-2xl p-6 sm:p-8 text-center">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 sm:p-8 text-center">
               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Wand2 className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
+                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
               </div>
               <h3 className="text-lg sm:text-xl font-semibold text-green-900 mb-2">
-                Vos 10 phrases d'accroche sont prêtes !
+                🎉 Vos 10 phrases d'accroche sont prêtes !
               </h3>
               <p className="text-sm sm:text-base text-green-700 mb-6">
-                Générées par notre IA - Débloquez votre pack personnalisé pour seulement 3€
+                Générées par notre IA Gemini - Débloquez votre pack personnalisé pour seulement <span className="font-bold">${product.price}</span>
               </p>
               <button
                 onClick={navigateToPayment}
                 className="inline-flex items-center space-x-2 sm:space-x-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all transform hover:scale-105"
               >
-                <span className="hidden sm:inline">Payer 3€ pour voir et copier les phrases</span>
-                <span className="sm:hidden">Payer 3€ pour débloquer</span>
+                <span className="hidden sm:inline">Payer ${product.price} pour voir et copier les phrases</span>
+                <span className="sm:hidden">Payer ${product.price} pour débloquer</span>
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
+              
+              {/* Trust indicators */}
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-green-600">
+                <div className="flex items-center space-x-1">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>Paiement sécurisé</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>Accès immédiat</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>Satisfaction garantie</span>
+                </div>
+              </div>
             </div>
           )}
         </div>

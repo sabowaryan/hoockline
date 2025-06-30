@@ -13,59 +13,80 @@ export interface CheckoutSessionResponse {
 }
 
 export async function createCheckoutSession(request: CheckoutSessionRequest): Promise<CheckoutSessionResponse> {
-  // Get session but don't require authentication for public payments
-  const { data: { session } } = await supabase.auth.getSession();
-  
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  try {
+    // Get session but don't require authentication for public payments
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
 
-  // Only add Authorization header if user is authenticated
-  if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`;
+    // Only add Authorization header if user is authenticated
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        price_id: request.priceId,
+        mode: request.mode,
+        success_url: request.successUrl,
+        cancel_url: request.cancelUrl,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.url) {
+      throw new Error('No checkout URL received from server');
+    }
+
+    return data;
+  } catch (error: any) {
+    console.error('Stripe checkout error:', error);
+    throw new Error(error.message || 'Failed to create checkout session');
   }
-
-  const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      price_id: request.priceId,
-      mode: request.mode,
-      success_url: request.successUrl,
-      cancel_url: request.cancelUrl,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create checkout session');
-  }
-
-  return response.json();
 }
 
 export async function getUserSubscription() {
-  const { data, error } = await supabase
-    .from('stripe_user_subscriptions')
-    .select('*')
-    .maybeSingle();
+  try {
+    const { data, error } = await supabase
+      .from('stripe_user_subscriptions')
+      .select('*')
+      .maybeSingle();
 
-  if (error) {
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching user subscription:', error);
     throw error;
   }
-
-  return data;
 }
 
 export async function getUserOrders() {
-  const { data, error } = await supabase
-    .from('stripe_user_orders')
-    .select('*')
-    .order('order_date', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('stripe_user_orders')
+      .select('*')
+      .order('order_date', { ascending: false });
 
-  if (error) {
+    if (error) {
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching user orders:', error);
     throw error;
   }
-
-  return data || [];
 }
