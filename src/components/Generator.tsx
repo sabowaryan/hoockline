@@ -198,7 +198,7 @@ export function Generator() {
                 🎉 Vos 10 phrases d'accroche sont prêtes !
               </h3>
               <p className="text-sm sm:text-base text-green-700 mb-6">
-                Générées par notre IA Gemini - Débloquez votre pack personnalisé pour seulement <span className="font-bold">${product.price}</span>
+                 Débloquez votre pack personnalisé pour seulement <span className="font-bold">${product.price}</span>
               </p>
               <button
                 onClick={navigateToPayment}
