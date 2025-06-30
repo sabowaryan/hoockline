@@ -64,26 +64,24 @@ const sidebarItems: SidebarItem[] = [
 
 // Memoized sidebar component to prevent unnecessary re-renders
 const Sidebar = memo(({ 
-  sidebarOpen, 
   activeItem, 
   onItemClick, 
   onToggle, 
   user, 
   userProfile, 
-  onSignOut 
+  onSignOut,
+  isMobile = false
 }: {
-  sidebarOpen: boolean;
   activeItem: string;
   onItemClick: (id: string) => void;
   onToggle: () => void;
   user: User;
   userProfile: any;
   onSignOut: () => void;
+  isMobile?: boolean;
 }) => (
-  <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-    sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-  }`}>
-    {/* Sidebar Header - Fixed */}
+  <div className="flex flex-col h-full bg-white">
+    {/* Sidebar Header */}
     <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 bg-white">
       <div className="flex items-center space-x-3">
         <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg">
@@ -94,12 +92,14 @@ const Sidebar = memo(({
           <p className="text-xs text-gray-500">Clicklone</p>
         </div>
       </div>
-      <button
-        onClick={onToggle}
-        className="lg:hidden p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-      >
-        <X className="w-5 h-5" />
-      </button>
+      {isMobile && (
+        <button
+          onClick={onToggle}
+          className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      )}
     </div>
 
     {/* Scrollable Navigation Area */}
@@ -183,34 +183,47 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Fixed Sidebar */}
+      {/* Desktop Sidebar - Fixed and always visible on large screens */}
       <div className="hidden lg:flex lg:flex-shrink-0">
-        <div className="flex flex-col w-64">
+        <div className="flex flex-col w-64 fixed inset-y-0 left-0 z-50 shadow-xl">
           <Sidebar
-            sidebarOpen={true}
             activeItem={activeItem}
             onItemClick={handleItemClick}
             onToggle={toggleSidebar}
             user={user}
             userProfile={userProfile}
             onSignOut={handleSignOut}
+            isMobile={false}
           />
         </div>
       </div>
 
-      {/* Mobile Sidebar */}
-      <Sidebar
-        sidebarOpen={sidebarOpen}
-        activeItem={activeItem}
-        onItemClick={handleItemClick}
-        onToggle={toggleSidebar}
-        user={user}
-        userProfile={userProfile}
-        onSignOut={handleSignOut}
-      />
+      {/* Mobile Sidebar - Only visible when sidebarOpen is true */}
+      {sidebarOpen && (
+        <>
+          {/* Mobile Sidebar Overlay */}
+          <div
+            className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden transition-opacity"
+            onClick={toggleSidebar}
+          />
+          
+          {/* Mobile Sidebar */}
+          <div className="fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out lg:hidden shadow-xl">
+            <Sidebar
+              activeItem={activeItem}
+              onItemClick={handleItemClick}
+              onToggle={toggleSidebar}
+              user={user}
+              userProfile={userProfile}
+              onSignOut={handleSignOut}
+              isMobile={true}
+            />
+          </div>
+        </>
+      )}
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Main Content Area - Adjusted margin for desktop sidebar */}
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         {/* Fixed Top Navbar */}
         <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
@@ -280,14 +293,6 @@ export function AdminLayout({ children, user }: AdminLayoutProps) {
           </div>
         </main>
       </div>
-
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden transition-opacity"
-          onClick={toggleSidebar}
-        />
-      )}
     </div>
   );
 }
