@@ -1,10 +1,22 @@
 import React, { useState } from 'react';
 import { Zap, Menu, X, Home, Wand2, HelpCircle, Mail, Shield } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from './auth/AuthWrapper';
 
 export function Navbar() {
   const { state, navigateToHome, navigateToGenerator } = useApp();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Get auth context to check if user is admin
+  let isAdmin = false;
+  try {
+    const { user, userProfile } = useAuth();
+    isAdmin = user && userProfile?.role === 'admin';
+  } catch (error) {
+    // useAuth will throw if not within AuthWrapper context
+    // This is expected for public routes, so we silently handle it
+    isAdmin = false;
+  }
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -87,13 +99,16 @@ export function Navbar() {
               <span>Contact</span>
             </a>
 
-            <button
-              onClick={handleAdminClick}
-              className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-            >
-              <Shield className="w-4 h-4" />
-              <span>Admin</span>
-            </button>
+            {/* Admin link - only show for authenticated admin users */}
+            {isAdmin && (
+              <button
+                onClick={handleAdminClick}
+                className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              >
+                <Shield className="w-4 h-4" />
+                <span>Admin</span>
+              </button>
+            )}
           </div>
 
           {/* CTA Button Desktop */}
@@ -165,16 +180,19 @@ export function Navbar() {
                 <span>Contact</span>
               </a>
 
-              <button
-                onClick={() => {
-                  handleAdminClick();
-                  closeMobileMenu();
-                }}
-                className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-              >
-                <Shield className="w-5 h-5" />
-                <span>Admin</span>
-              </button>
+              {/* Admin link - only show for authenticated admin users in mobile menu */}
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    handleAdminClick();
+                    closeMobileMenu();
+                  }}
+                  className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                >
+                  <Shield className="w-5 h-5" />
+                  <span>Admin</span>
+                </button>
+              )}
 
               <div className="pt-4 border-t border-gray-100">
                 <button
