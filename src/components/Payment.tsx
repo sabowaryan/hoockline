@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Shield, CreditCard, Globe, Loader2, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Shield, CreditCard, Globe, Loader2, ArrowLeft, CheckCircle, Star, Lock } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { createCheckoutSession } from '../services/stripe';
-import { products } from '../stripe-config';
+import { products, formatPrice } from '../stripe-config';
 
 const languageNames: Record<string, string> = {
   'fr': 'Français',
@@ -92,7 +92,13 @@ export function Payment() {
             </div>
             <h3 className="text-xl font-bold mb-2">{product.name}</h3>
             <p className="text-purple-100 text-sm mb-4">{product.description}</p>
-            <div className="text-3xl font-bold">${product.price}</div>
+            <div className="text-3xl font-bold">{formatPrice(product.price)}</div>
+            <div className="flex items-center justify-center space-x-1 mt-2">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-4 h-4 text-yellow-300 fill-current" />
+              ))}
+              <span className="text-purple-100 text-sm ml-2">Satisfaction garantie</span>
+            </div>
           </div>
         </div>
 
@@ -105,21 +111,23 @@ export function Payment() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm sm:text-base text-gray-600">{product.name}</span>
-              <span className="font-semibold text-gray-900">${product.price}</span>
+              <span className="font-semibold text-gray-900">{formatPrice(product.price)}</span>
             </div>
-            <div className="text-xs sm:text-sm text-gray-500">
-              ✨ 10 phrases d'accroche uniques
+            
+            {/* Product features */}
+            <div className="space-y-2">
+              {product.features.slice(0, 4).map((feature, index) => (
+                <div key={index} className="flex items-center text-xs sm:text-sm text-gray-500">
+                  <CheckCircle className="w-3 h-3 text-green-500 mr-2 flex-shrink-0" />
+                  <span>{feature}</span>
+                </div>
+              ))}
             </div>
-            <div className="text-xs sm:text-sm text-gray-500">
-              🤖 Générées par IA Gemini
-            </div>
-            <div className="text-xs sm:text-sm text-gray-500">
-              📋 Copie en un clic
-            </div>
+            
             <div className="border-t pt-3">
               <div className="flex justify-between items-center">
                 <span className="font-semibold text-gray-900">Total</span>
-                <span className="text-lg sm:text-xl font-bold text-purple-600">${product.price}</span>
+                <span className="text-lg sm:text-xl font-bold text-purple-600">{formatPrice(product.price)}</span>
               </div>
             </div>
           </div>
@@ -183,8 +191,8 @@ export function Payment() {
             </>
           ) : (
             <>
-              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Payer ${product.price} maintenant</span>
+              <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span>Payer {formatPrice(product.price)} maintenant</span>
             </>
           )}
         </button>

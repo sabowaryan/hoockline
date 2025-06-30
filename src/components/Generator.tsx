@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Wand2, Loader2, ArrowRight, AlertTriangle, Globe, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Wand2, Loader2, ArrowRight, AlertTriangle, Globe, CheckCircle, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Tone } from '../types';
-import { products } from '../stripe-config';
+import { products, formatPrice } from '../stripe-config';
 
-const tones: { value: Tone; label: string; description: string }[] = [
-  { value: 'humoristique', label: 'Humoristique', description: 'Amusant et décalé' },
-  { value: 'inspirant', label: 'Inspirant', description: 'Motivant et positif' },
-  { value: 'direct', label: 'Direct et Bref', description: 'Efficace et percutant' },
-  { value: 'mysterieux', label: 'Mystérieux', description: 'Intriguant et curieux' },
-  { value: 'luxueux', label: 'Luxueux', description: 'Élégant et premium' },
-  { value: 'techy', label: 'Technologique', description: 'Innovant et moderne' },
+const tones: { value: Tone; label: string; description: string; emoji: string }[] = [
+  { value: 'humoristique', label: 'Humoristique', description: 'Amusant et décalé', emoji: '😄' },
+  { value: 'inspirant', label: 'Inspirant', description: 'Motivant et positif', emoji: '💪' },
+  { value: 'direct', label: 'Direct et Bref', description: 'Efficace et percutant', emoji: '⚡' },
+  { value: 'mysterieux', label: 'Mystérieux', description: 'Intriguant et curieux', emoji: '🔮' },
+  { value: 'luxueux', label: 'Luxueux', description: 'Élégant et premium', emoji: '👑' },
+  { value: 'techy', label: 'Technologique', description: 'Innovant et moderne', emoji: '🤖' },
 ];
 
 const languages = [
@@ -57,7 +57,7 @@ export function Generator() {
           {/* Pricing Info */}
           <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 px-4 py-2 rounded-full text-sm font-medium">
             <CheckCircle className="w-4 h-4" />
-            <span>Seulement ${product.price} pour 10 phrases personnalisées</span>
+            <span>Seulement {formatPrice(product.price)} pour 10 phrases personnalisées</span>
           </div>
           
           {/* AI Status Indicator */}
@@ -151,11 +151,16 @@ export function Generator() {
                       : 'border-gray-200 hover:border-gray-300 bg-white'
                   } ${state.isGenerating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
-                  <div className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
-                    {tone.label}
-                  </div>
-                  <div className="text-xs sm:text-sm text-gray-600">
-                    {tone.description}
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">{tone.emoji}</span>
+                    <div>
+                      <div className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
+                        {tone.label}
+                      </div>
+                      <div className="text-xs sm:text-sm text-gray-600">
+                        {tone.description}
+                      </div>
+                    </div>
                   </div>
                 </button>
               ))}
@@ -198,14 +203,14 @@ export function Generator() {
                 🎉 Vos 10 phrases d'accroche sont prêtes !
               </h3>
               <p className="text-sm sm:text-base text-green-700 mb-6">
-                 Débloquez votre pack personnalisé pour seulement <span className="font-bold">${product.price}</span>
+                 Débloquez votre pack personnalisé pour seulement <span className="font-bold">{formatPrice(product.price)}</span>
               </p>
               <button
                 onClick={navigateToPayment}
                 className="inline-flex items-center space-x-2 sm:space-x-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl text-base sm:text-lg font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all transform hover:scale-105"
               >
-                <span className="hidden sm:inline">Payer ${product.price} pour voir et copier les phrases</span>
-                <span className="sm:hidden">Payer ${product.price} pour débloquer</span>
+                <span className="hidden sm:inline">Payer {formatPrice(product.price)} pour voir et copier les phrases</span>
+                <span className="sm:hidden">Payer {formatPrice(product.price)} pour débloquer</span>
                 <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Zap, ArrowRight, Sparkles, Target, Lightbulb, CheckCircle, Star } from 'lucide-react';
+import { Zap, ArrowRight, Sparkles, Target, Lightbulb, CheckCircle, Star, Shield, Clock, Globe } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { products } from '../stripe-config';
+import { products, formatPrice } from '../stripe-config';
 
 const examples = [
   {
@@ -23,6 +23,45 @@ const examples = [
     concept: "Service de livraison",
     tone: "direct",
     hookline: "Votre commande. Chez vous. En 30 minutes."
+  }
+];
+
+const features = [
+  {
+    icon: Zap,
+    title: "Génération instantanée",
+    description: "10 phrases d'accroche uniques générées en moins de 5 secondes",
+    color: "purple"
+  },
+  {
+    icon: Target,
+    title: "Tons personnalisés",
+    description: "6 tons différents pour s'adapter parfaitement à votre marque",
+    color: "pink"
+  },
+  {
+    icon: Globe,
+    title: "Multi-langues",
+    description: "Génération native dans 6 langues avec adaptation culturelle",
+    color: "blue"
+  },
+  {
+    icon: Sparkles,
+    title: "Prêt à l'emploi",
+    description: "Copiez-collez directement vos phrases favorites où vous voulez",
+    color: "indigo"
+  },
+  {
+    icon: Shield,
+    title: "Paiement sécurisé",
+    description: "Transaction protégée par Stripe avec chiffrement SSL",
+    color: "green"
+  },
+  {
+    icon: Clock,
+    title: "Accès immédiat",
+    description: "Débloquez vos phrases instantanément après le paiement",
+    color: "orange"
   }
 ];
 
@@ -64,7 +103,7 @@ export function HomePage() {
               <span className="font-semibold">Offre de lancement</span>
               <Star className="w-5 h-5 text-yellow-300 fill-current" />
             </div>
-            <div className="text-3xl font-bold mb-2">${product.price}</div>
+            <div className="text-3xl font-bold mb-2">{formatPrice(product.price)}</div>
             <div className="text-purple-100 text-sm">
               Pour 10 phrases d'accroche personnalisées
             </div>
@@ -144,42 +183,40 @@ export function HomePage() {
 
       {/* Features Section */}
       <section className="py-12 sm:py-16">
-        <div className="grid sm:grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
-          <div className="text-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-              Génération instantanée
-            </h3>
-            <p className="text-sm sm:text-base text-gray-600">
-              10 phrases d'accroche uniques générées en moins de 5 secondes
-            </p>
-          </div>
-          
-          <div className="text-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-pink-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Target className="w-6 h-6 sm:w-8 sm:h-8 text-pink-600" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-              Tons personnalisés
-            </h3>
-            <p className="text-sm sm:text-base text-gray-600">
-              6 tons différents pour s'adapter parfaitement à votre marque
-            </p>
-          </div>
-          
-          <div className="text-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-600" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-              Prêt à l'emploi
-            </h3>
-            <p className="text-sm sm:text-base text-gray-600">
-              Copiez-collez directement vos phrases favorites où vous voulez
-            </p>
-          </div>
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+            Pourquoi choisir Clicklone ?
+          </h2>
+          <p className="text-gray-600 text-base sm:text-lg">
+            La solution complète pour vos phrases d'accroche
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
+          {features.map((feature, index) => {
+            const colorClasses = {
+              purple: 'bg-purple-100 text-purple-600',
+              pink: 'bg-pink-100 text-pink-600',
+              blue: 'bg-blue-100 text-blue-600',
+              indigo: 'bg-indigo-100 text-indigo-600',
+              green: 'bg-green-100 text-green-600',
+              orange: 'bg-orange-100 text-orange-600'
+            };
+
+            return (
+              <div key={index} className="text-center">
+                <div className={`w-12 h-12 sm:w-16 sm:h-16 ${colorClasses[feature.color]} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
+                  <feature.icon className="w-6 h-6 sm:w-8 sm:h-8" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-sm sm:text-base text-gray-600">
+                  {feature.description}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -196,7 +233,7 @@ export function HomePage() {
             onClick={navigateToGenerator}
             className="bg-white text-purple-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-purple-50 transition-colors transform hover:scale-105"
           >
-            Commencer maintenant - ${product.price}
+            Commencer maintenant - {formatPrice(product.price)}
           </button>
         </div>
       </section>
