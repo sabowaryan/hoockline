@@ -40,16 +40,11 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   const [loading, setLoading] = useState(true);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   
-  // Utiliser des refs pour éviter les boucles infinies
-  const initializationDone = useRef(false);
-  const profileFetched = useRef(false);
+  // Use refs to prevent infinite loops
+  const initialized = useRef(false);
+  const profileLoaded = useRef(false);
 
-  const fetchUserProfile = async (userId: string, force = false) => {
-    // Éviter de refetch si déjà fait, sauf si forcé
-    if (profileFetched.current && !force) {
-      return;
-    }
-
+  const fetchUserProfile = async (userId: string) => {
     try {
       console.log('Fetching profile for user:', userId);
       
@@ -62,7 +57,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       if (error) {
         console.error('Error fetching user profile:', error);
         
-        // Si le profil n'existe pas, créer un profil par défaut
+        // If profile doesn't exist, create a default one
         if (error.code === 'PGRST116') {
           console.log('Profile not found, creating default profile...');
           
@@ -70,7 +65,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             .from('profiles')
             .insert({
               id: userId,
-              role: 'user' // Rôle par défaut
+              role: 'user'
             })
             .select('id, role, created_at, updated_at')
             .single();
@@ -81,7 +76,6 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           } else {
             console.log('Created new profile:', newProfile);
             setUserProfile(newProfile);
-            profileFetched.current = true;
           }
         } else {
           setUserProfile(null);
@@ -89,17 +83,19 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       } else {
         console.log('Profile found:', data);
         setUserProfile(data);
-        profileFetched.current = true;
       }
+      
+      profileLoaded.current = true;
     } catch (error) {
       console.error('Unexpected error fetching user profile:', error);
       setUserProfile(null);
+      profileLoaded.current = true;
     }
   };
 
   useEffect(() => {
-    // Éviter la double initialisation
-    if (initializationDone.current) {
+    // Prevent multiple initializations
+    if (initialized.current) {
       return;
     }
 
@@ -117,7 +113,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             setUser(null);
             setUserProfile(null);
             setLoading(false);
-            initializationDone.current = true;
+            initialized.current = true;
           }
           return;
         }
@@ -131,11 +127,11 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             await fetchUserProfile(session.user.id);
           } else {
             setUserProfile(null);
-            profileFetched.current = false;
+            profileLoaded.current = true;
           }
           
           setLoading(false);
-          initializationDone.current = true;
+          initialized.current = true;
         }
       } catch (error) {
         console.error('Unexpected error in initializeAuth:', error);
@@ -143,14 +139,14 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           setUser(null);
           setUserProfile(null);
           setLoading(false);
-          initializationDone.current = true;
+          initialized.current = true;
         }
       }
     };
 
     initializeAuth();
 
-    // Écouter les changements d'authentification
+    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -160,16 +156,16 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Reset le flag pour permettre le fetch du profil
-          profileFetched.current = false;
-          await fetchUserProfile(session.user.id, true);
+          // Reset profile loading state
+          profileLoaded.current = false;
+          await fetchUserProfile(session.user.id);
         } else {
           setUserProfile(null);
-          profileFetched.current = false;
+          profileLoaded.current = true;
         }
         
-        // Seulement définir loading à false si l'initialisation est terminée
-        if (initializationDone.current) {
+        // Only set loading to false if initialization is complete
+        if (initialized.current) {
           setLoading(false);
         }
       }
@@ -179,10 +175,10 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []); // Dépendances vides pour éviter les re-exécutions
+  }, []); // Empty dependency array to run only once
 
   const handleAuthSuccess = () => {
-    // L'écouteur de changement d'état d'authentification gérera la mise à jour
+    // Auth state change listener will handle the update
     console.log('Auth success handled by state listener');
   };
 
@@ -192,15 +188,17 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     loading,
   };
 
-  // État de chargement initial
-  if (loading) {
+  // Show loading state
+  if (loading || !initialized.current || (user && !profileLoaded.current)) {
     return (
       <AuthContext.Provider value={authContextValue}>
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             <p className="text-gray-600">
-              {!initializationDone.current ? 'Initialisation...' : 'Vérification des permissions...'}
+              {!initialized.current ? 'Initialisation...' : 
+               user && !profileLoaded.current ? 'Chargement du profil...' : 
+               'Vérification des permissions...'}
             </p>
           </div>
         </div>
@@ -208,7 +206,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     );
   }
 
-  // Utilisateur non connecté
+  // User not authenticated
   if (!user) {
     if (authMode === 'signup') {
       return (
@@ -224,15 +222,15 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     return (
       <AuthContext.Provider value={authContextValue}>
         <LoginPage
-          onSwitchToSignup={() => setAuthMode('signup')}
+          onSwitchToLogin={() => setAuthMode('signup')}
           onLoginSuccess={handleAuthSuccess}
         />
       </AuthContext.Provider>
     );
   }
 
-  // Erreur de profil utilisateur
-  if (!userProfile && profileFetched.current) {
+  // Profile loading error
+  if (!userProfile && profileLoaded.current) {
     return (
       <AuthContext.Provider value={authContextValue}>
         <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center">
@@ -249,8 +247,8 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
             <div className="space-y-2">
               <button
                 onClick={() => {
-                  profileFetched.current = false;
-                  initializationDone.current = false;
+                  profileLoaded.current = false;
+                  initialized.current = false;
                   window.location.reload();
                 }}
                 className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mr-2"
@@ -270,7 +268,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     );
   }
 
-  // Vérifier si l'utilisateur a le rôle admin
+  // Check if user has admin role
   if (userProfile && userProfile.role !== 'admin') {
     return (
       <AuthContext.Provider value={authContextValue}>
@@ -279,7 +277,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     );
   }
 
-  // Utilisateur authentifié avec rôle admin
+  // Authenticated admin user
   if (userProfile && userProfile.role === 'admin') {
     return (
       <AuthContext.Provider value={authContextValue}>
@@ -288,13 +286,13 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     );
   }
 
-  // État de chargement du profil (ne devrait pas arriver souvent)
+  // Fallback loading state (should rarely be reached)
   return (
     <AuthContext.Provider value={authContextValue}>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Chargement du profil...</p>
+          <p className="text-gray-600">Finalisation de l'authentification...</p>
         </div>
       </div>
     </AuthContext.Provider>
