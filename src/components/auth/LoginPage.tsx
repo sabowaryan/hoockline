@@ -42,10 +42,10 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Connexion à votre compte
+            Connexion Administrateur
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Accédez à vos phrases d'accroche personnalisées
+            Accès réservé aux administrateurs de Clicklone
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="votre@email.com"
+                  placeholder="admin@clicklone.com"
                   disabled={isLoading}
                 />
               </div>
@@ -139,16 +139,12 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
             </button>
           </div>
 
+          {/* Remove signup link for admin-only access */}
           <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Pas encore de compte ?{' '}
-              <button
-                type="button"
-                onClick={onSwitchToSignup}
-                className="font-medium text-purple-600 hover:text-purple-500 transition-colors"
-              >
-                Créer un compte
-              </button>
+            <p className="text-xs text-gray-500">
+              Seuls les administrateurs peuvent accéder à cette application.
+              <br />
+              Contactez votre administrateur système si vous avez besoin d'un accès.
             </p>
           </div>
         </form>
