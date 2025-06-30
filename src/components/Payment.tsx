@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Shield, CreditCard, Globe } from 'lucide-react';
+import { Shield, CreditCard, Globe, Loader2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { createCheckoutSession } from '../services/stripe';
+import { products } from '../stripe-config';
 
 const languageNames: Record<string, string> = {
   'fr': 'Français',
@@ -12,17 +14,38 @@ const languageNames: Record<string, string> = {
 };
 
 export function Payment() {
-  const { state, completePayment } = useApp();
+  const { state } = useApp();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const product = products[0]; // Hookline product
 
   const handlePayment = async () => {
     setIsProcessing(true);
+    setError(null);
     
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsProcessing(false);
-    completePayment();
+    try {
+      const currentUrl = window.location.origin;
+      const successUrl = `${currentUrl}?success=true`;
+      const cancelUrl = `${currentUrl}?canceled=true`;
+
+      const { url } = await createCheckoutSession({
+        priceId: product.priceId,
+        mode: product.mode,
+        successUrl,
+        cancelUrl,
+      });
+
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error('No checkout URL received');
+      }
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      setError(err.message || 'Une erreur est survenue lors du paiement');
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -37,6 +60,13 @@ export function Payment() {
           </p>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
+
         {/* Order Summary */}
         <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 mb-6 sm:mb-8">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
@@ -45,13 +75,16 @@ export function Payment() {
           
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm sm:text-base text-gray-600">Pack de 10 phrases d'accroche</span>
-              <span className="font-semibold text-gray-900">3,00 €</span>
+              <span className="text-sm sm:text-base text-gray-600">{product.name}</span>
+              <span className="font-semibold text-gray-900">${product.price}</span>
+            </div>
+            <div className="text-xs sm:text-sm text-gray-500">
+              {product.description}
             </div>
             <div className="border-t pt-3">
               <div className="flex justify-between items-center">
                 <span className="font-semibold text-gray-900">Total</span>
-                <span className="text-lg sm:text-xl font-bold text-purple-600">3,00 €</span>
+                <span className="text-lg sm:text-xl font-bold text-purple-600">${product.price}</span>
               </div>
             </div>
           </div>
@@ -83,64 +116,6 @@ export function Payment() {
           )}
         </div>
 
-        {/* Payment Form (Simulated) */}
-        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 mb-6 sm:mb-8">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-            Informations de paiement
-          </h3>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                placeholder="votre@email.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
-                disabled={isProcessing}
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Numéro de carte
-              </label>
-              <input
-                type="text"
-                placeholder="4242 4242 4242 4242"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
-                disabled={isProcessing}
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  MM/AA
-                </label>
-                <input
-                  type="text"
-                  placeholder="12/28"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
-                  disabled={isProcessing}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  CVC
-                </label>
-                <input
-                  type="text"
-                  placeholder="123"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
-                  disabled={isProcessing}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Security Notice */}
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 sm:mb-8">
           <div className="flex items-center space-x-3">
@@ -168,13 +143,13 @@ export function Payment() {
         >
           {isProcessing ? (
             <>
-              <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-              <span>Traitement en cours...</span>
+              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+              <span>Redirection vers Stripe...</span>
             </>
           ) : (
             <>
               <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Payer 3,00 € maintenant</span>
+              <span>Payer ${product.price} maintenant</span>
             </>
           )}
         </button>

@@ -13,7 +13,7 @@ export interface GeneratedPhrase {
 }
 
 export interface AppState {
-  currentStep: 'home' | 'generator' | 'payment' | 'results';
+  currentStep: 'home' | 'generator' | 'payment' | 'results' | 'success';
   generationRequest: GenerationRequest | null;
   generatedPhrases: GeneratedPhrase[];
   isGenerating: boolean;

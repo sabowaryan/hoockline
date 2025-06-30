@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { AppState, GenerationRequest, GeneratedPhrase } from '../types';
 
 interface AppContextType {
@@ -8,6 +8,7 @@ interface AppContextType {
   navigateToPayment: () => void;
   completePayment: () => void;
   navigateToHome: () => void;
+  navigateToSuccess: () => void;
   copyPhrase: (phrase: string) => void;
 }
 
@@ -20,7 +21,8 @@ type Action =
   | { type: 'GENERATION_ERROR'; payload: string }
   | { type: 'NAVIGATE_TO_PAYMENT' }
   | { type: 'COMPLETE_PAYMENT' }
-  | { type: 'NAVIGATE_TO_HOME' };
+  | { type: 'NAVIGATE_TO_HOME' }
+  | { type: 'NAVIGATE_TO_SUCCESS' };
 
 const initialState: AppState = {
   currentStep: 'home',
@@ -65,6 +67,8 @@ function appReducer(state: AppState, action: Action): AppState {
       };
     case 'NAVIGATE_TO_HOME':
       return { ...initialState };
+    case 'NAVIGATE_TO_SUCCESS':
+      return { ...state, currentStep: 'success' };
     default:
       return state;
   }
@@ -72,6 +76,16 @@ function appReducer(state: AppState, action: Action): AppState {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+
+  // Check for success parameter on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true') {
+      dispatch({ type: 'NAVIGATE_TO_SUCCESS' });
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const navigateToGenerator = () => {
     dispatch({ type: 'NAVIGATE_TO_GENERATOR' });
@@ -117,6 +131,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'NAVIGATE_TO_HOME' });
   };
 
+  const navigateToSuccess = () => {
+    dispatch({ type: 'NAVIGATE_TO_SUCCESS' });
+  };
+
   const copyPhrase = async (phrase: string) => {
     try {
       await navigator.clipboard.writeText(phrase);
@@ -134,6 +152,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         navigateToPayment,
         completePayment,
         navigateToHome,
+        navigateToSuccess,
         copyPhrase,
       }}
     >
