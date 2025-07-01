@@ -11,7 +11,10 @@ import {
   ArrowDown,
   Minus,
   Target,
-  Filter
+  Filter,
+  Activity,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { ConversionFunnel } from '../../components/admin/analytics/ConversionFunnel';
@@ -63,21 +66,43 @@ const StatCard = memo(({
   icon: React.ComponentType<{ className?: string }>;
   color: 'blue' | 'green' | 'purple' | 'orange';
 }) => {
-  const colorClasses = {
-    blue: 'bg-blue-100 text-blue-600',
-    green: 'bg-green-100 text-green-600',
-    purple: 'bg-purple-100 text-purple-600',
-    orange: 'bg-orange-100 text-orange-600'
+  const colorConfig = {
+    blue: {
+      bg: 'bg-gradient-to-br from-blue-50 to-indigo-100',
+      border: 'border-blue-200/50',
+      iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-600',
+      text: 'text-blue-600'
+    },
+    green: {
+      bg: 'bg-gradient-to-br from-green-50 to-emerald-100',
+      border: 'border-green-200/50',
+      iconBg: 'bg-gradient-to-br from-green-500 to-emerald-600',
+      text: 'text-green-600'
+    },
+    purple: {
+      bg: 'bg-gradient-to-br from-purple-50 to-violet-100',
+      border: 'border-purple-200/50',
+      iconBg: 'bg-gradient-to-br from-purple-500 to-violet-600',
+      text: 'text-purple-600'
+    },
+    orange: {
+      bg: 'bg-gradient-to-br from-orange-50 to-amber-100',
+      border: 'border-orange-200/50',
+      iconBg: 'bg-gradient-to-br from-orange-500 to-amber-600',
+      text: 'text-orange-600'
+    }
   };
 
+  const config = colorConfig[color];
+
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+    <div className={`${config.bg} rounded-2xl p-6 shadow-lg border ${config.border} hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1`}>
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm font-medium text-gray-600 mb-2">{title}</p>
+          <p className="text-3xl font-bold text-gray-900 mb-3">{value}</p>
           {change && (
-            <div className={`flex items-center mt-2 text-sm ${
+            <div className={`flex items-center text-sm font-medium ${
               change.type === 'increase' ? 'text-green-600' : 
               change.type === 'decrease' ? 'text-red-600' : 'text-gray-600'
             }`}>
@@ -89,8 +114,8 @@ const StatCard = memo(({
             </div>
           )}
         </div>
-        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${colorClasses[color]}`}>
-          <Icon className="w-6 h-6" />
+        <div className={`w-14 h-14 ${config.iconBg} rounded-xl flex items-center justify-center shadow-lg`}>
+          <Icon className="w-7 h-7 text-white" />
         </div>
       </div>
     </div>
@@ -114,13 +139,26 @@ const PageRow = memo(({ page, index }: { page: PopularPage; index: number }) => 
     return '📄';
   };
 
+  const getPageColor = (index: number) => {
+    const colors = [
+      'from-blue-500 to-indigo-600',
+      'from-purple-500 to-violet-600',
+      'from-green-500 to-emerald-600',
+      'from-orange-500 to-amber-600',
+      'from-pink-500 to-rose-600'
+    ];
+    return colors[index % colors.length];
+  };
+
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex items-center">
-          <span className="text-lg mr-3">{getPageIcon(page.page_path)}</span>
+    <tr className="hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 transition-all duration-300">
+      <td className="px-8 py-6 whitespace-nowrap">
+        <div className="flex items-center space-x-4">
+          <div className={`w-12 h-12 bg-gradient-to-br ${getPageColor(index)} rounded-xl flex items-center justify-center shadow-sm`}>
+            <span className="text-xl">{getPageIcon(page.page_path)}</span>
+          </div>
           <div>
-            <div className="text-sm font-medium text-gray-900">
+            <div className="text-lg font-bold text-gray-900">
               {getPageName(page.page_path)}
             </div>
             <div className="text-sm text-gray-500">
@@ -129,23 +167,31 @@ const PageRow = memo(({ page, index }: { page: PopularPage; index: number }) => 
           </div>
         </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-        {page.total_views.toLocaleString()}
+      <td className="px-8 py-6 whitespace-nowrap">
+        <div className="text-lg font-bold text-gray-900">
+          {page.total_views.toLocaleString()}
+        </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-        {page.unique_sessions.toLocaleString()}
+      <td className="px-8 py-6 whitespace-nowrap">
+        <div className="text-lg font-bold text-gray-900">
+          {page.unique_sessions.toLocaleString()}
+        </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-        {page.days_active}
+      <td className="px-8 py-6 whitespace-nowrap">
+        <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+          {page.days_active} jours
+        </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        {new Date(page.last_view).toLocaleDateString('fr-FR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        })}
+      <td className="px-8 py-6 whitespace-nowrap">
+        <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
+          {new Date(page.last_view).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+        </div>
       </td>
     </tr>
   );
@@ -272,12 +318,12 @@ export function TrafficPage() {
   const renderOverview = () => {
     if (loading) {
       return (
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-pulse">
-            <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="space-y-8">
+          <div className="bg-gradient-to-br from-white via-purple-50 to-blue-50 rounded-2xl p-8 shadow-xl border border-white/20 backdrop-blur-sm animate-pulse">
+            <div className="h-8 bg-gradient-to-r from-purple-200 to-blue-200 rounded-lg w-1/4 mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-20 bg-gray-200 rounded"></div>
+                <div key={i} className="h-24 bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl"></div>
               ))}
             </div>
           </div>
@@ -287,17 +333,20 @@ export function TrafficPage() {
 
     if (error) {
       return (
-        <div className="flex items-center justify-center h-64">
+        <div className="bg-gradient-to-br from-white via-red-50 to-pink-50 rounded-2xl p-8 shadow-xl border border-white/20 backdrop-blur-sm">
           <div className="text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-red-600 text-2xl">⚠️</span>
+            <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <AlertCircle className="w-10 h-10 text-red-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Erreur de chargement</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-3 bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">
+              Erreur de chargement
+            </h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">{error}</p>
             <button
               onClick={fetchTrafficStats}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
+              <RefreshCw className="w-4 h-4 inline mr-2" />
               Réessayer
             </button>
           </div>
@@ -306,7 +355,7 @@ export function TrafficPage() {
     }
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
@@ -343,11 +392,14 @@ export function TrafficPage() {
         </div>
 
         {/* Popular Pages */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-gradient-to-br from-white via-gray-50 to-slate-50 rounded-2xl shadow-xl border border-white/20 backdrop-blur-sm overflow-hidden">
+          <div className="px-8 py-6 bg-gradient-to-r from-gray-900 to-slate-800">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Pages populaires</h3>
-              <span className="text-sm text-gray-500">
+              <h3 className="text-xl font-bold text-white flex items-center space-x-3">
+                <Activity className="w-6 h-6" />
+                <span>Pages populaires</span>
+              </h3>
+              <span className="text-purple-200 text-sm font-medium">
                 {timeRange === '7d' ? '7 derniers jours' : 
                  timeRange === '30d' ? '30 derniers jours' : '90 derniers jours'}
               </span>
@@ -356,21 +408,21 @@ export function TrafficPage() {
           
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-gray-50 to-slate-100">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-8 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Page
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-8 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Vues totales
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-8 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Sessions uniques
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-8 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Jours actifs
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-8 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
                     Dernière vue
                   </th>
                 </tr>
@@ -382,11 +434,13 @@ export function TrafficPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
+                    <td colSpan={5} className="px-8 py-12 text-center">
                       <div className="flex flex-col items-center">
-                        <TrendingUp className="w-8 h-8 text-gray-300 mb-2" />
-                        <p>Aucune donnée de trafic disponible</p>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mb-4">
+                          <TrendingUp className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-lg font-medium text-gray-900 mb-2">Aucune donnée de trafic disponible</p>
+                        <p className="text-sm text-gray-500 max-w-md">
                           Les statistiques apparaîtront une fois que des visiteurs auront consulté votre site
                         </p>
                       </div>
@@ -399,37 +453,53 @@ export function TrafficPage() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Activité récente</h3>
+        <div className="bg-gradient-to-br from-white via-purple-50 to-blue-50 rounded-2xl p-8 shadow-xl border border-white/20 backdrop-blur-sm">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Clock className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">Activité récente</h3>
+              <p className="text-gray-600">Dernières interactions sur votre site</p>
+            </div>
           </div>
           
-          <div className="p-6">
+          <div className="space-y-4">
             {stats.recentViews.length > 0 ? (
-              <div className="space-y-3">
-                {stats.recentViews.slice(0, 10).map((view) => (
-                  <div key={view.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                    <div className="flex items-center space-x-3">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm font-medium text-gray-900">
-                        {view.page_path === '/' ? 'Accueil' : view.page_path}
-                      </span>
+              stats.recentViews.slice(0, 10).map((view) => (
+                <div key={view.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
+                        <Clock className="w-5 h-5 text-gray-600" />
+                      </div>
+                      <div>
+                        <span className="text-sm font-bold text-gray-900">
+                          {view.page_path === '/' ? 'Accueil' : view.page_path}
+                        </span>
+                        <div className="text-xs text-gray-500">
+                          Session: {view.session_id.slice(0, 8)}...
+                        </div>
+                      </div>
                     </div>
-                    <span className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
                       {new Date(view.created_at).toLocaleString('fr-FR', {
                         day: '2-digit',
                         month: '2-digit',
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
-                    </span>
+                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))
             ) : (
-              <div className="text-center py-8">
-                <Clock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">Aucune activité récente</p>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Clock className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-lg font-medium text-gray-900 mb-2">Aucune activité récente</p>
+                <p className="text-sm text-gray-500">Les interactions apparaîtront ici</p>
               </div>
             )}
           </div>
@@ -439,36 +509,24 @@ export function TrafficPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Statistiques de trafic
-          </h2>
-          <p className="text-gray-600">
-            Analyse complète du trafic et des conversions
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-          {activeView === 'overview' && (
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value as '7d' | '30d' | '90d')}
-              className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            >
-              <option value="7d">7 derniers jours</option>
-              <option value="30d">30 derniers jours</option>
-              <option value="90d">90 derniers jours</option>
-            </select>
-          )}
+      <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 rounded-2xl p-8 text-white shadow-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">Statistiques de trafic</h2>
+            <p className="text-purple-100 text-lg">Analyse complète du trafic et des conversions</p>
+          </div>
+          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+            <Activity className="w-8 h-8" />
+          </div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-gradient-to-br from-white via-gray-50 to-slate-50 rounded-2xl shadow-xl border border-white/20 backdrop-blur-sm overflow-hidden">
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6" aria-label="Tabs">
+          <nav className="flex space-x-8 px-8" aria-label="Tabs">
             {[
               { id: 'overview', name: 'Vue d\'ensemble', icon: BarChart3 },
               { id: 'funnel', name: 'Funnel de conversion', icon: Target },
@@ -480,17 +538,34 @@ export function TrafficPage() {
                 onClick={() => setActiveView(tab.id as AnalyticsView)}
                 className={`${
                   activeView === tab.id
-                    ? 'border-purple-500 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 transition-colors`}
+                    ? 'border-purple-500 text-purple-600 bg-purple-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                } whitespace-nowrap py-6 px-3 border-b-2 font-bold text-sm flex items-center space-x-3 transition-all duration-300 rounded-t-lg`}
               >
-                <tab.icon className="w-4 h-4" />
+                <tab.icon className="w-5 h-5" />
                 <span>{tab.name}</span>
               </button>
             ))}
           </nav>
         </div>
       </div>
+
+      {/* Time Range Selector */}
+      {activeView === 'overview' && (
+        <div className="flex justify-end">
+          <div className="bg-white rounded-xl p-2 shadow-lg border border-gray-100">
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value as '7d' | '30d' | '90d')}
+              className="block pl-4 pr-10 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-transparent font-medium text-gray-900"
+            >
+              <option value="7d">7 derniers jours</option>
+              <option value="30d">30 derniers jours</option>
+              <option value="90d">90 derniers jours</option>
+            </select>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       {renderContent()}
