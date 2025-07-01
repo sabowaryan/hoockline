@@ -24,33 +24,34 @@ import {
 import { useApp } from '../context/AppContext';
 import { products, formatPrice } from '../stripe-config';
 import { isPaymentRequired, areFreeTrialsAllowed, getTrialLimit } from '../services/settings';
+import { useTranslation } from 'react-i18next';
 
 const examples = [
   {
-    concept: "Application de méditation",
+    concept: "home.examples.meditation.concept",
     tone: "humoristique",
-    hookline: "Détendez-vous ou la vie vous mordra.",
+    hookline: "home.examples.meditation.humorous",
     icon: Laugh,
     color: "from-yellow-400 to-orange-500"
   },
   {
-    concept: "Application de méditation",
+    concept: "home.examples.meditation.concept",
     tone: "inspirant",
-    hookline: "Respirez. Créez. Répétez.",
+    hookline: "home.examples.meditation.inspiring",
     icon: Heart,
     color: "from-pink-400 to-rose-500"
   },
   {
-    concept: "Plateforme de freelancing",
+    concept: "home.examples.freelancing.concept",
     tone: "inspirant",
-    hookline: "Transformez vos compétences en liberté financière.",
+    hookline: "home.examples.freelancing.inspiring",
     icon: Rocket,
     color: "from-blue-400 to-cyan-500"
   },
   {
-    concept: "Service de livraison",
+    concept: "home.examples.delivery.concept",
     tone: "direct",
-    hookline: "Votre commande. Chez vous. En 30 minutes.",
+    hookline: "home.examples.delivery.direct",
     icon: Zap,
     color: "from-purple-400 to-indigo-500"
   }
@@ -59,71 +60,97 @@ const examples = [
 const features = [
   {
     icon: Brain,
-    title: "IA  avancée",
-    description: "Technologie de pointe pour des phrases créatives et percutantes",
+    title: "home.features.ai.title",
+    description: "home.features.ai.description",
     color: "from-purple-500 to-pink-600"
   },
   {
     icon: Target,
-    title: "6 tons personnalisés",
-    description: "Humoristique, inspirant, direct, mystérieux, luxueux, technologique",
+    title: "home.features.tones.title",
+    description: "home.features.tones.description",
     color: "from-pink-500 to-rose-600"
   },
   {
     icon: Globe,
-    title: "6 langues natives",
-    description: "Français, anglais, espagnol, allemand, italien, portugais",
+    title: "home.features.languages.title",
+    description: "home.features.languages.description",
     color: "from-blue-500 to-cyan-600"
   },
   {
     icon: Zap,
-    title: "Génération instantanée",
-    description: "10 phrases uniques générées en moins de 5 secondes",
+    title: "home.features.instant.title",
+    description: "home.features.instant.description",
     color: "from-indigo-500 to-purple-600"
   },
   {
     icon: Shield,
-    title: "Paiement sécurisé",
-    description: "Transaction protégée par Stripe avec chiffrement SSL",
+    title: "home.features.secure.title",
+    description: "home.features.secure.description",
     color: "from-green-500 to-emerald-600"
   },
   {
     icon: Clock,
-    title: "Accès immédiat",
-    description: "Débloquez vos phrases instantanément après le paiement",
+    title: "home.features.access.title",
+    description: "home.features.access.description",
     color: "from-orange-500 to-amber-600"
   }
 ];
 
-const testimonials = [
-  {
-    name: "Sarah M.",
-    role: "Marketing Manager",
-    content: "Clicklone m'a fait gagner des heures de brainstorming ! Les phrases générées sont parfaites pour mes campagnes.",
-    rating: 5,
-    avatar: "SM"
-  },
-  {
-    name: "Thomas L.",
-    role: "Entrepreneur",
-    content: "Interface intuitive et résultats bluffants. J'ai trouvé mon slogan parfait en 2 minutes !",
-    rating: 5,
-    avatar: "TL"
-  },
-  {
-    name: "Marie D.",
-    role: "Freelance Copywriter",
-    content: "Un outil indispensable pour débloquer ma créativité. Les 6 tons disponibles couvrent tous mes besoins.",
-    rating: 5,
-    avatar: "MD"
-  }
-];
+// Témoignages mockés multilingues
+const testimonialsMock = {
+  fr: [
+    {
+      name: "Sarah M.",
+      role: "Marketing Manager",
+      content: "Clicklone m'a fait gagner des heures de brainstorming ! Les phrases générées sont parfaites pour mes campagnes.",
+      rating: 5,
+      avatar: "SM"
+    },
+    {
+      name: "Thomas L.",
+      role: "Entrepreneur",
+      content: "Interface intuitive et résultats bluffants. J'ai trouvé mon slogan parfait en 2 minutes !",
+      rating: 5,
+      avatar: "TL"
+    },
+    {
+      name: "Marie D.",
+      role: "Freelance Copywriter",
+      content: "Un outil indispensable pour débloquer ma créativité. Les 6 tons disponibles couvrent tous mes besoins.",
+      rating: 5,
+      avatar: "MD"
+    }
+  ],
+  en: [
+    {
+      name: "Sarah M.",
+      role: "Marketing Manager",
+      content: "Clicklone saved me hours of brainstorming! The generated phrases are perfect for my campaigns.",
+      rating: 5,
+      avatar: "SM"
+    },
+    {
+      name: "Thomas L.",
+      role: "Entrepreneur",
+      content: "Intuitive interface and amazing results. I found my perfect slogan in 2 minutes!",
+      rating: 5,
+      avatar: "TL"
+    },
+    {
+      name: "Marie D.",
+      role: "Freelance Copywriter",
+      content: "An essential tool to unlock my creativity. The 6 available tones cover all my needs.",
+      rating: 5,
+      avatar: "MD"
+    }
+  ]
+};
 
 const stats = [
-  { number: "10K+", label: "Phrases générées", icon: Sparkles },
-  { number: "2K+", label: "Utilisateurs satisfaits", icon: Users },
-  { number: "98%", label: "Taux de satisfaction", icon: TrendingUp },
-  { number: "6", label: "Langues disponibles", icon: Globe }
+  { number: "10K+", label: "home.stats.phrases", icon: Sparkles },
+  { number: "2K+", label: "home.stats.users", icon: Users },
+  { number: "98%", label: "home.stats.satisfaction", icon: TrendingUp },
+  { number: "6", label: "home.stats.languages", icon: Globe }
 ];
 
 export function HomePage() {
@@ -135,6 +162,9 @@ export function HomePage() {
   });
   const [loading, setLoading] = useState(true);
   const [animateIn, setAnimateIn] = useState(false);
+  const { t, i18n } = useTranslation();
+  const lang = (i18n.language === 'fr' || i18n.language === 'en') ? i18n.language : 'en';
+  const testimonials: Array<{ name: string; role: string; content: string; rating: number; avatar: string }> = testimonialsMock[lang];
 
   useEffect(() => {
     setAnimateIn(true);
@@ -182,27 +212,27 @@ export function HomePage() {
       return (
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-3xl p-8 mb-12 text-white max-w-lg mx-auto relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-bl-3xl text-sm font-bold">
-            GRATUIT
+            {t('home.payment.free')}
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold">Génération gratuite</span>
+              <span className="text-xl font-bold">{t('home.payment.freeTitle')}</span>
             </div>
             <div className="text-5xl font-bold mb-4">0€</div>
             <div className="text-green-100 text-lg mb-6">
-              Générez vos phrases d'accroche gratuitement
+              {t('home.payment.freeDescription')}
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm text-green-200">
               <div className="flex items-center space-x-2">
                 <CheckCircle className="w-4 h-4" />
-                <span>Accès illimité</span>
+                <span>{t('home.payment.unlimited')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <CheckCircle className="w-4 h-4" />
-                <span>Génération instantanée</span>
+                <span>{t('home.features.instant.title')}</span>
               </div>
             </div>
           </div>
@@ -214,27 +244,27 @@ export function HomePage() {
       return (
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 mb-12 text-white max-w-lg mx-auto relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 bg-yellow-400 text-purple-900 px-4 py-2 rounded-bl-3xl text-sm font-bold">
-            ESSAI GRATUIT
+            {t('home.payment.trial')}
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                 <Star className="w-6 h-6 text-yellow-300 fill-current" />
               </div>
-              <span className="text-xl font-bold">Offre de lancement</span>
+              <span className="text-xl font-bold">{t('home.payment.trialTitle')}</span>
             </div>
             <div className="text-5xl font-bold mb-4">{formatPrice(product.price)}</div>
             <div className="text-purple-100 text-lg mb-6">
-              Pour 10 phrases d'accroche personnalisées
+              {t('home.payment.trialDescription')}
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm text-purple-200">
               <div className="flex items-center space-x-2">
                 <CheckCircle className="w-4 h-4" />
-                <span>{paymentSettings.trialLimit} essais gratuits</span>
+                <span>{paymentSettings.trialLimit} {t('home.payment.trialCount')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <CheckCircle className="w-4 h-4" />
-                <span>Accès immédiat</span>
+                <span>{t('home.trust.instantAccess')}</span>
               </div>
             </div>
           </div>
@@ -246,27 +276,27 @@ export function HomePage() {
     return (
       <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 mb-12 text-white max-w-lg mx-auto relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 bg-yellow-400 text-purple-900 px-4 py-2 rounded-bl-3xl text-sm font-bold">
-          POPULAIRE
+          {t('home.payment.popular')}
         </div>
         <div className="text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
               <Award className="w-6 h-6 text-yellow-300" />
             </div>
-            <span className="text-xl font-bold">Offre premium</span>
+            <span className="text-xl font-bold">{t('home.payment.premiumTitle')}</span>
           </div>
           <div className="text-5xl font-bold mb-4">{formatPrice(product.price)}</div>
           <div className="text-purple-100 text-lg mb-6">
-            Pour 10 phrases d'accroche personnalisées
+            {t('home.payment.premiumDescription')}
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm text-purple-200">
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-4 h-4" />
-              <span>Paiement unique</span>
+              <span>{t('home.payment.oneTime')}</span>
             </div>
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-4 h-4" />
-              <span>Accès immédiat</span>
+              <span>{t('home.trust.instantAccess')}</span>
             </div>
           </div>
         </div>
@@ -277,10 +307,10 @@ export function HomePage() {
   // Fonction pour afficher conditionnellement les indicateurs de confiance
   const renderTrustIndicators = () => {
     const indicators = [
-      { icon: Shield, text: 'Paiement sécurisé Stripe', color: 'text-green-500', show: true },
-      { icon: Clock, text: 'Accès immédiat', color: 'text-blue-500', show: true },
-      { icon: Brain, text: 'IA Avancée', color: 'text-purple-500', show: true },
-      { icon: CreditCard, text: 'Sans abonnement', color: 'text-orange-500', show: !paymentSettings.paymentRequired || paymentSettings.freeTrialsAllowed }
+      { icon: Shield, text: t('home.trust.securePayment'), color: 'text-green-500', show: true },
+      { icon: Clock, text: t('home.trust.instantAccess'), color: 'text-blue-500', show: true },
+      { icon: Brain, text: t('home.trust.advancedAI'), color: 'text-purple-500', show: true },
+      { icon: CreditCard, text: t('home.trust.noSubscription'), color: 'text-orange-500', show: !paymentSettings.paymentRequired || paymentSettings.freeTrialsAllowed }
     ];
 
     return (
@@ -305,22 +335,20 @@ export function HomePage() {
               <div className="flex items-center space-x-3 bg-gradient-to-r from-purple-100 to-pink-100 px-6 py-3 rounded-full border border-purple-200">
                 <Sparkles className="w-5 h-5 text-purple-600" />
                 <span className="text-sm font-semibold text-purple-700">
-                  Générateur IA de phrases d'accroche
+                  {t('home.hero.subtitle')}
                 </span>
               </div>
             </div>
             
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-              Trouvez votre
+              {t('home.hero.title')}
               <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent block">
-                slogan parfait
+                {t('home.hero.cta')}
               </span>
-              en 1 clic
             </h1>
             
             <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Fini les heures passées à chercher LA phrase qui accroche. Notre IA génère 10 slogans percutants 
-              adaptés à votre concept et votre ton en quelques secondes.
+              {t('home.hero.description')}
             </p>
 
             {/* Enhanced Pricing highlight */}
@@ -330,7 +358,7 @@ export function HomePage() {
               onClick={navigateToGenerator}
               className="group inline-flex items-center space-x-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105"
             >
-              <span>Générer ma phrase d'accroche</span>
+              <span>{t('home.hero.cta')}</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
             </button>
 
@@ -352,7 +380,7 @@ export function HomePage() {
                     <IconComponent className="w-8 h-8 text-white" />
                   </div>
                   <div className="text-3xl font-bold text-gray-900 mb-2">{stat.number}</div>
-                  <div className="text-gray-600 font-medium">{stat.label}</div>
+                  <div className="text-gray-600 font-medium">{t(stat.label)}</div>
                 </div>
               );
             })}
@@ -365,10 +393,10 @@ export function HomePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={`text-center mb-12 transition-all duration-1000 ${animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ animationDelay: '400ms' }}>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-              Voici ce que Clicklone peut faire pour vous
+              {t('home.examples.title')}
             </h2>
             <p className="text-gray-600 text-lg sm:text-xl max-w-2xl mx-auto">
-              Des exemples réels générés par notre IA
+              {t('home.examples.subtitle')}
             </p>
           </div>
 
@@ -389,13 +417,13 @@ export function HomePage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {example.concept}
+                        {t(example.concept)}
                       </h3>
                       <p className="text-sm text-gray-500 mb-4 capitalize font-medium">
-                        Ton {example.tone}
+                        {t('home.examples.tone', { tone: example.tone })}
                       </p>
                       <blockquote className="text-lg text-gray-700 italic leading-relaxed">
-                        "{example.hookline}"
+                        "{t(example.hookline)}"
                       </blockquote>
                     </div>
                   </div>
@@ -411,10 +439,10 @@ export function HomePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={`text-center mb-12 transition-all duration-1000 ${animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ animationDelay: '600ms' }}>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-              Pourquoi choisir Clicklone ?
+              {t('home.features.title')}
             </h2>
             <p className="text-gray-600 text-lg sm:text-xl max-w-2xl mx-auto">
-              Tout ce dont vous avez besoin pour créer des phrases d'accroche percutantes
+              {t('home.features.subtitle')}
             </p>
           </div>
 
@@ -429,10 +457,10 @@ export function HomePage() {
                   <feature.icon className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
-                  {feature.title}
+                  {t(feature.title)}
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
-                  {feature.description}
+                  {t(feature.description)}
                 </p>
               </div>
             ))}
@@ -445,15 +473,15 @@ export function HomePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={`text-center mb-12 transition-all duration-1000 ${animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ animationDelay: '800ms' }}>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-              Ce que disent nos utilisateurs
+              {t('home.testimonials.title')}
             </h2>
             <p className="text-gray-600 text-lg sm:text-xl max-w-2xl mx-auto">
-              Des milliers de professionnels nous font confiance
+              {t('home.testimonials.subtitle')}
             </p>
           </div>
 
           <div className="grid sm:grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
+            {testimonials.map((testimonial: typeof testimonials[0], index: number) => (
               <div
                 key={index}
                 className={`bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-500 transform hover:scale-105 ${animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
@@ -491,16 +519,16 @@ export function HomePage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={`text-center transition-all duration-1000 ${animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ animationDelay: '1200ms' }}>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-              Prêt à créer vos phrases d'accroche ?
+              {t('home.cta.title')}
             </h2>
             <p className="text-gray-600 text-lg sm:text-xl mb-10 max-w-2xl mx-auto">
-              Rejoignez des milliers de professionnels qui utilisent Clicklone pour leurs campagnes
+              {t('home.cta.subtitle')}
             </p>
             <button
               onClick={navigateToGenerator}
               className="group inline-flex items-center space-x-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105"
             >
-              <span>Commencer maintenant</span>
+              <span>{t('home.cta.button')}</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
             </button>
           </div>

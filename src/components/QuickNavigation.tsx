@@ -3,6 +3,7 @@ import { Home, Wand2, CreditCard, CheckCircle, ArrowRight, Lock } from 'lucide-r
 import { Link, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { isPaymentRequired, areFreeTrialsAllowed, getTrialLimit } from '../services/settings';
+import { useTranslation } from 'react-i18next';
 
 interface QuickNavItem {
   label: string;
@@ -26,6 +27,7 @@ export function QuickNavigation() {
     trialLimit: 1
   });
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadPaymentSettings();
@@ -83,48 +85,48 @@ export function QuickNavigation() {
 
   const quickNavItems: QuickNavItem[] = [
     {
-      label: 'Accueil',
+      label: t('quicknav.home'),
       path: '/',
       icon: Home,
-      description: 'Découvrez Clicklone',
+      description: t('quicknav.homeDesc'),
       color: 'from-blue-500 to-blue-600'
     },
     {
-      label: 'Générateur',
+      label: t('quicknav.generator'),
       path: '/generator',
       icon: Wand2,
-      description: 'Créez vos phrases d\'accroche',
+      description: t('quicknav.generatorDesc'),
       color: 'from-purple-500 to-pink-600'
     },
     {
-      label: 'Paiement',
+      label: t('quicknav.payment'),
       path: '/payment',
       icon: CreditCard,
-      description: 'Sécurisez votre achat',
+      description: t('quicknav.paymentDesc'),
       color: 'from-green-500 to-green-600',
       requiresPayment: true,
       disabled: !canAccessPayment(),
       disabledReason: !paymentSettings.paymentRequired 
-        ? 'Paiement non requis' 
+        ? t('quicknav.paymentNotRequired')
         : localStorage.getItem('payment_completed') === 'true'
-        ? 'Paiement déjà effectué'
+        ? t('quicknav.paymentAlreadyDone')
         : paymentSettings.freeTrialsAllowed && parseInt(localStorage.getItem('trial_count') || '0') < paymentSettings.trialLimit
-        ? 'Essais gratuits disponibles'
-        : 'Non disponible'
+        ? t('quicknav.freeTrialsAvailable')
+        : t('quicknav.notAvailable')
     },
     {
-      label: 'Résultats',
+      label: t('quicknav.results'),
       path: '/results',
       icon: CheckCircle,
-      description: 'Vos phrases générées',
+      description: t('quicknav.resultsDesc'),
       color: 'from-orange-500 to-orange-600',
       requiresGeneration: true,
       disabled: !canAccessResults() || state.generatedPhrases.length === 0,
       disabledReason: state.generatedPhrases.length === 0 
-        ? 'Aucune phrase générée' 
+        ? t('quicknav.noGenerated')
         : !canAccessResults()
-        ? 'Accès non autorisé'
-        : 'Non disponible'
+        ? t('quicknav.unauthorized')
+        : t('quicknav.notAvailable')
     }
   ];
 
@@ -164,7 +166,7 @@ export function QuickNavigation() {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900">Navigation rapide</h3>
+        <h3 className="text-sm font-semibold text-gray-900">{t('quicknav.title')}</h3>
         <ArrowRight className="w-4 h-4 text-gray-400" />
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -190,7 +192,7 @@ export function QuickNavigation() {
       {/* Afficher les éléments désactivés avec une indication visuelle */}
       {quickNavItems.some(item => item.disabled && item.path !== currentPath) && (
         <div className="mt-4 pt-4 border-t border-gray-100">
-          <h4 className="text-xs font-medium text-gray-500 mb-2">Pages non disponibles</h4>
+          <h4 className="text-xs font-medium text-gray-500 mb-2">{t('quicknav.unavailablePages')}</h4>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {quickNavItems
               .filter(item => item.disabled && item.path !== currentPath)

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Copy, CheckCircle, Home, RefreshCw, Globe, Sparkles, Zap, ArrowRight, Star } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useTranslation } from 'react-i18next';
 
 const languageNames: Record<string, string> = {
   'fr': 'Français',
@@ -15,6 +16,7 @@ export function ResultsPage() {
   const { state, navigateToHome, copyPhrase } = useApp();
   const [copiedPhrases, setCopiedPhrases] = useState<Set<string>>(new Set());
   const [animateIn, setAnimateIn] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Animation d'entrée
@@ -42,15 +44,15 @@ export function ResultsPage() {
           <div className="w-20 h-20 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <Sparkles className="w-10 h-10 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Aucune phrase générée</h2>
-          <p className="text-gray-600 mb-6">Commencez par générer vos phrases d'accroche personnalisées</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('results.emptyTitle')}</h2>
+          <p className="text-gray-600 mb-6">{t('results.emptyDesc')}</p>
           <button
             onClick={navigateToHome}
             className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all transform hover:scale-105"
           >
             <span className="flex items-center space-x-2">
               <Zap className="w-5 h-5" />
-              <span>Commencer la génération</span>
+              <span>{t('results.startGeneration')}</span>
             </span>
           </button>
         </div>
@@ -72,12 +74,12 @@ export function ResultsPage() {
           </div>
           
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">
-            Vos phrases d'accroche sont prêtes !
+            {t('results.readyTitle')}
           </h1>
           
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-xl border border-white/20 mb-8">
             <p className="text-lg sm:text-xl text-gray-700 mb-4">
-              Voici vos <span className="font-bold text-purple-600">10 phrases personnalisées</span> pour :
+              {t('results.personalizedPhrases')} <span className="font-bold text-purple-600">10</span> {t('results.for')} :
             </p>
             <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 mb-4">
               <p className="text-lg sm:text-xl font-semibold text-gray-900">
@@ -89,13 +91,13 @@ export function ResultsPage() {
               <div className="flex items-center space-x-2 bg-purple-100 px-4 py-2 rounded-full">
                 <Sparkles className="w-4 h-4 text-purple-600" />
                 <span className="font-medium capitalize">
-                  Ton {state.generationRequest?.tone}
+                  {t('results.tone')} {t(`generator.form.tones.${state.generationRequest?.tone}`)}
                 </span>
               </div>
               <div className="flex items-center space-x-2 bg-pink-100 px-4 py-2 rounded-full">
                 <Globe className="w-4 h-4 text-pink-600" />
                 <span className="font-medium">
-                  {languageNames[state.generationRequest?.language || 'fr'] || state.generationRequest?.language}
+                  {t(`generator.form.languages.${state.generationRequest?.language}`) || state.generationRequest?.language}
                 </span>
               </div>
             </div>
@@ -141,12 +143,12 @@ export function ResultsPage() {
                   {copiedPhrases.has(phrase.id) ? (
                     <>
                       <CheckCircle className="w-5 h-5" />
-                      <span className="font-semibold">Copié !</span>
+                      <span className="font-semibold">{t('results.copied')}</span>
                     </>
                   ) : (
                     <>
                       <Copy className="w-5 h-5" />
-                      <span className="font-semibold">Copier</span>
+                      <span className="font-semibold">{t('results.copy')}</span>
                     </>
                   )}
                 </button>
@@ -170,11 +172,10 @@ export function ResultsPage() {
               </div>
               
               <h3 className="text-2xl sm:text-3xl font-bold mb-6">
-                C'est parti pour conquérir le monde ! 🚀
+                {t('results.ctaTitle')}
               </h3>
               <p className="text-purple-100 mb-8 text-lg leading-relaxed max-w-2xl mx-auto">
-                Utilisez ces phrases pour vos titres, vos slogans ou vos posts. 
-                Revenez quand vous le souhaitez pour générer de nouvelles accroches dans d'autres langues !
+                {t('results.ctaDesc')}
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -183,7 +184,7 @@ export function ResultsPage() {
                   className="group inline-flex items-center justify-center space-x-3 bg-white text-purple-600 px-6 py-4 rounded-xl font-semibold hover:bg-purple-50 transition-all transform hover:scale-105 shadow-lg"
                 >
                   <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-                  <span>Générer d'autres phrases</span>
+                  <span>{t('results.generateMore')}</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <button
@@ -191,7 +192,7 @@ export function ResultsPage() {
                   className="inline-flex items-center justify-center space-x-3 bg-white/20 text-white px-6 py-4 rounded-xl font-semibold hover:bg-white/30 transition-all transform hover:scale-105 border border-white/30"
                 >
                   <Home className="w-5 h-5" />
-                  <span>Retour à l'accueil</span>
+                  <span>{t('results.backHome')}</span>
                 </button>
               </div>
             </div>

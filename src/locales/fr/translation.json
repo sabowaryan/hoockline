@@ -1,0 +1,373 @@
+{
+  "common": {
+    "home": "Accueil",
+    "generator": "Générateur",
+    "help": "Aide",
+    "contact": "Contact",
+    "admin": "Admin",
+    "createNow": "Créer maintenant",
+    "logout": "Déconnexion",
+    "dashboard": "Tableau de bord",
+    "settings": "Paramètres",
+    "users": "Utilisateurs",
+    "orders": "Commandes",
+    "analytics": "Analyses",
+    "seo": "SEO",
+    "traffic": "Trafic"
+  },
+  "home": {
+    "hero": {
+      "title": "Créez des phrases d'accroche percutantes avec l'IA",
+      "subtitle": "Générez 10 phrases uniques et impactantes en quelques secondes",
+      "cta": "Commencer à générer",
+      "description": "Fini les heures passées à chercher LA phrase qui accroche. Notre IA génère 10 slogans percutants adaptés à votre concept et votre ton en quelques secondes."
+    },
+    "features": {
+      "title": "Pourquoi choisir Clicklone ?",
+      "subtitle": "Tout ce dont vous avez besoin pour créer des phrases d'accroche percutantes",
+      "ai": {
+        "title": "IA avancée",
+        "description": "Technologie de pointe pour des phrases créatives et percutantes"
+      },
+      "tones": {
+        "title": "6 tons personnalisés",
+        "description": "Humoristique, inspirant, direct, mystérieux, luxueux, technologique"
+      },
+      "languages": {
+        "title": "6 langues natives",
+        "description": "Français, anglais, espagnol, allemand, italien, portugais"
+      },
+      "instant": {
+        "title": "Génération instantanée",
+        "description": "10 phrases uniques générées en moins de 5 secondes"
+      },
+      "secure": {
+        "title": "Paiement sécurisé",
+        "description": "Transaction protégée par Stripe avec chiffrement SSL"
+      },
+      "access": {
+        "title": "Accès immédiat",
+        "description": "Débloquez vos phrases instantanément après le paiement"
+      }
+    },
+    "examples": {
+      "title": "Voici ce que Clicklone peut faire pour vous",
+      "subtitle": "Des exemples réels générés par notre IA",
+      "tone": "Ton {{tone}}",
+      "meditation": {
+        "concept": "Application de méditation",
+        "humorous": "Détendez-vous ou la vie vous mordra.",
+        "inspiring": "Respirez. Créez. Répétez."
+      },
+      "freelancing": {
+        "concept": "Plateforme de freelancing",
+        "inspiring": "Transformez vos compétences en liberté financière."
+      },
+      "delivery": {
+        "concept": "Service de livraison",
+        "direct": "Votre commande. Chez vous. En 30 minutes."
+      }
+    },
+    "testimonials": {
+      "title": "Ce que disent nos utilisateurs",
+      "subtitle": "Des milliers de professionnels nous font confiance"
+    },
+    "cta": {
+      "title": "Prêt à créer vos phrases d'accroche ?",
+      "subtitle": "Rejoignez des milliers de professionnels qui utilisent Clicklone pour leurs campagnes",
+      "button": "Commencer maintenant"
+    },
+    "stats": {
+      "phrases": "Phrases générées",
+      "users": "Utilisateurs satisfaits",
+      "satisfaction": "Taux de satisfaction",
+      "languages": "Langues disponibles"
+    },
+    "pricing": {
+      "free": "GRATUIT",
+      "freeTitle": "Génération gratuite",
+      "freeDescription": "Générez vos phrases d'accroche gratuitement",
+      "unlimited": "Générations illimitées",
+      "allTones": "Tous les 6 tons",
+      "allLanguages": "Toutes les 6 langues",
+      "instantAccess": "Accès immédiat",
+      "noAds": "Aucune publicité"
+    },
+    "trust": {
+      "securePayment": "Paiement sécurisé Stripe",
+      "instantAccess": "Accès immédiat",
+      "advancedAI": "IA Avancée",
+      "noSubscription": "Sans abonnement"
+    },
+    "payment": {
+      "free": "GRATUIT",
+      "freeTitle": "Génération gratuite",
+      "freeDescription": "Générez vos phrases d'accroche gratuitement",
+      "unlimited": "Accès illimité",
+      "trial": "ESSAI GRATUIT",
+      "trialTitle": "Offre de lancement",
+      "trialDescription": "Pour 10 phrases d'accroche personnalisées",
+      "trialCount": "essais gratuits",
+      "popular": "POPULAIRE",
+      "premiumTitle": "Offre premium",
+      "premiumDescription": "Pour 10 phrases d'accroche personnalisées",
+      "oneTime": "Paiement unique",
+      "productFeatures": "Fonctionnalités du produit",
+      "feature": {
+        "0": "10 phrases d'accroche uniques",
+        "1": "Générées par IA",
+        "2": "6 tons différents disponibles",
+        "3": "6 langues supportées"
+      },
+      "productDescription": "Pack de 10 phrases d'accroche personnalisées générées par IA"
+    }
+  },
+  "generator": {
+    "title": "Générateur IA",
+    "description": "Créez vos phrases d'accroche personnalisées avec l'intelligence artificielle",
+    "payment": {
+      "proceed": "Procéder au paiement"
+    },
+    "form": {
+      "concept": "Votre concept ou produit",
+      "conceptDescription": "Décrivez ce que vous voulez promouvoir",
+      "conceptPlaceholder": "Ex: Application de méditation, Service de livraison, Plateforme de freelancing...",
+      "conceptHelp": "Décrivez votre concept en quelques mots pour que l'IA puisse créer des phrases adaptées",
+      "tone": "Choisissez votre ton",
+      "toneDescription": "Sélectionnez l'ambiance de vos phrases",
+      "language": "Langue de génération",
+      "languageDescription": "Choisissez la langue de vos phrases",
+      "generate": "Générer mes phrases d'accroche",
+      "generating": "Génération en cours...",
+      "freeTitle": "Génération gratuite",
+      "freeDescription": "Vous pouvez générer vos phrases gratuitement",
+      "tones": {
+        "humoristique": "Humoristique",
+        "inspirant": "Inspirant",
+        "direct": "Direct et Bref",
+        "mysterieux": "Mystérieux",
+        "luxueux": "Luxueux",
+        "techy": "Technologique"
+      },
+      "tonesDesc": {
+        "humoristique": "Amusant et décalé",
+        "inspirant": "Motivant et positif",
+        "direct": "Efficace et percutant",
+        "mysterieux": "Intriguant et curieux",
+        "luxueux": "Élégant et premium",
+        "techy": "Innovant et moderne"
+      },
+      "languages": {
+        "fr": "Français",
+        "en": "Anglais",
+        "es": "Espagnol",
+        "de": "Allemand",
+        "it": "Italien",
+        "pt": "Portugais"
+      },
+      "trialTitle": "Essai gratuit disponible",
+      "trialCount": "{{count}}/{{limit}} essais gratuits",
+      "paymentRequired": "Paiement requis pour voir les résultats",
+      "paymentDescription": "Générez vos phrases maintenant, puis payez {{price}} pour les débloquer"
+    },
+    "results": {
+      "title": "Vos phrases d'accroche générées",
+      "copy": "Copier",
+      "copied": "Copié !",
+      "download": "Télécharger",
+      "share": "Partager"
+    }
+  },
+  "payment": {
+    "title": "Finaliser votre achat",
+    "secureStripe": "Paiement sécurisé avec Stripe",
+    "successTitle": "Phrases générées avec succès !",
+    "successDesc": "Vos {{count}} phrases d'accroche sont prêtes. Effectuez le paiement pour les débloquer immédiatement.",
+    "errorTitle": "Erreur de paiement",
+    "satisfaction": "Satisfaction garantie",
+    "summaryTitle": "Récapitulatif de commande",
+    "summaryDesc": "Détails de votre achat",
+    "total": "Total",
+    "yourGeneration": "Votre génération",
+    "concept": "Concept :",
+    "selectedTone": "Ton sélectionné",
+    "language": "Langue",
+    "secure100": "Paiement 100% sécurisé",
+    "sslStripe": "Chiffrement SSL • Protection Stripe • Aucune donnée stockée",
+    "acceptedMethods": "Moyens de paiement acceptés",
+    "card": {
+      "visa": "Visa",
+      "mastercard": "Mastercard",
+      "americanexpress": "American Express"
+    },
+    "redirecting": "Redirection vers Stripe...",
+    "payNow": "Payer {{price}} maintenant",
+    "terms1": "En cliquant sur \"Payer\", vous acceptez nos",
+    "terms2": "conditions d'utilisation",
+    "ssl": "SSL sécurisé",
+    "stripe": "Stripe certifié",
+    "instantAccess": "Accès immédiat"
+  },
+  "success": {
+    "loading": "Chargement de votre commande...",
+    "title": "🎉 Paiement réussi !",
+    "unlocked": "Votre pack {{product}} a été débloqué avec succès",
+    "order": "Commande #{{id}} • {{date}}",
+    "summary": "Récapitulatif de votre commande",
+    "product": "Produit",
+    "price": "Prix",
+    "status": "Statut",
+    "paid": "Payé",
+    "date": "Date",
+    "receive": "Ce que vous recevez :",
+    "feature": {
+      "0": "10 phrases d'accroche uniques",
+      "1": "Générées par IA Gemini",
+      "2": "Copie en un clic",
+      "3": "Téléchargement possible",
+      "4": "Accès permanent"
+    },
+    "generatedTitle": "Vos phrases d'accroche personnalisées",
+    "generatedFor": "Générées pour : \"{{concept}}\"",
+    "downloadAll": "Télécharger tout",
+    "copied": "Copié !",
+    "copy": "Copier",
+    "ctaTitle": "🚀 Prêt à conquérir le monde !",
+    "ctaDesc": "Utilisez ces phrases pour vos titres, vos slogans ou vos posts. Revenez quand vous le souhaitez pour générer de nouvelles accroches dans d'autres langues !",
+    "generateMore": "Générer d'autres phrases",
+    "backHome": "Retour à l'accueil",
+    "testimonial": {
+      "text": "Clicklone m'a fait gagner des heures de brainstorming ! Les phrases générées sont parfaites pour mes campagnes.",
+      "author": "- Sarah M., Responsable Marketing"
+    }
+  },
+  "admin": {
+    "dashboard": {
+      "title": "Tableau de bord Admin",
+      "welcome": "Bienvenue dans le panneau d'administration"
+    },
+    "users": {
+      "title": "Gestion des utilisateurs",
+      "addUser": "Ajouter un utilisateur",
+      "editUser": "Modifier l'utilisateur",
+      "deleteUser": "Supprimer l'utilisateur",
+      "search": "Rechercher des utilisateurs..."
+    },
+    "orders": {
+      "title": "Gestion des commandes",
+      "viewOrder": "Voir la commande",
+      "status": "Statut",
+      "amount": "Montant",
+      "date": "Date"
+    },
+    "analytics": {
+      "title": "Analyses",
+      "overview": "Aperçu",
+      "traffic": "Sources de trafic",
+      "conversions": "Conversions",
+      "revenue": "Revenus"
+    }
+  },
+  "auth": {
+    "login": "Connexion",
+    "signup": "S'inscrire",
+    "email": "Email",
+    "password": "Mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "hasAccount": "Vous avez déjà un compte ?"
+  },
+  "notifications": {
+    "success": "Succès",
+    "error": "Erreur",
+    "warning": "Avertissement",
+    "info": "Information"
+  },
+  "footer": {
+    "slogan1": "Le générateur IA qui transforme vos idées en phrases d'accroche percutantes.",
+    "slogan2": "Créez des slogans irrésistibles en quelques secondes.",
+    "productTitle": "Produit",
+    "home": "Accueil",
+    "generator": "Générateur",
+    "examples": "Exemples",
+    "pricing": "Tarifs",
+    "supportTitle": "Support",
+    "helpCenter": "Centre d'aide",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "guide": "Guide d'utilisation",
+    "legalTitle": "Légal",
+    "privacy": "Confidentialité",
+    "terms": "Conditions d'utilisation",
+    "cookies": "Politique des cookies",
+    "mentions": "Mentions légales",
+    "newsletterTitle": "Restez informé des nouveautés",
+    "newsletterDesc": "Recevez nos conseils en copywriting et les dernières fonctionnalités",
+    "newsletterPlaceholder": "votre@email.com",
+    "subscribe": "S'abonner",
+    "rights": "Tous droits réservés."
+  },
+  "quicknav": {
+    "title": "Navigation rapide",
+    "home": "Accueil",
+    "homeDesc": "Découvrez Clicklone",
+    "generator": "Générateur",
+    "generatorDesc": "Créez vos phrases d'accroche",
+    "payment": "Paiement",
+    "paymentDesc": "Sécurisez votre achat",
+    "results": "Résultats",
+    "resultsDesc": "Vos phrases générées",
+    "paymentNotRequired": "Paiement non requis",
+    "paymentAlreadyDone": "Paiement déjà effectué",
+    "freeTrialsAvailable": "Essais gratuits disponibles",
+    "notAvailable": "Non disponible",
+    "noGenerated": "Aucune phrase générée",
+    "unauthorized": "Accès non autorisé",
+    "unavailablePages": "Pages non disponibles"
+  },
+  "stepnav": {
+    "title": "Progression",
+    "home": "Accueil",
+    "homeDesc": "Découverte du service",
+    "generator": "Générateur",
+    "generatorDesc": "Configuration et génération",
+    "payment": "Paiement",
+    "paymentDesc": "Sécurisation du paiement",
+    "results": "Résultats",
+    "resultsDesc": "Vos phrases d'accroche",
+    "progress": "Étape {{current}} sur {{total}}",
+    "paymentNotRequired": "Paiement non requis",
+    "paymentAlreadyDone": "Paiement déjà effectué",
+    "freeTrialsAvailable": "Essais gratuits disponibles",
+    "notAvailable": "Non disponible",
+    "noGenerated": "Aucune phrase générée",
+    "unauthorized": "Accès non autorisé"
+  },
+  "breadcrumb": {
+    "home": "Accueil",
+    "admin": "Administration",
+    "generator": "Générateur",
+    "payment": "Paiement",
+    "results": "Résultats",
+    "success": "Succès",
+    "traffic": "Trafic",
+    "users": "Utilisateurs",
+    "orders": "Commandes",
+    "seo": "SEO"
+  },
+  "results": {
+    "emptyTitle": "Aucune phrase générée",
+    "emptyDesc": "Commencez par générer vos phrases d'accroche personnalisées",
+    "startGeneration": "Commencer la génération",
+    "readyTitle": "Vos phrases d'accroche sont prêtes !",
+    "personalizedPhrases": "Voici vos",
+    "for": "phrases personnalisées pour",
+    "tone": "Ton",
+    "copied": "Copié !",
+    "copy": "Copier",
+    "ctaTitle": "C'est parti pour conquérir le monde ! 🚀",
+    "ctaDesc": "Utilisez ces phrases pour vos titres, vos slogans ou vos posts. Revenez quand vous le souhaitez pour générer de nouvelles accroches dans d'autres langues !",
+    "generateMore": "Générer d'autres phrases",
+    "backHome": "Retour à l'accueil"
+  }
+} 

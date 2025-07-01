@@ -5,19 +5,19 @@ import {
   Loader2, 
   ArrowRight, 
   AlertTriangle, 
-  Globe, 
+  
   CheckCircle, 
   Star,
   Sparkles,
   Zap,
   Crown,
   Brain,
-  Target,
+ 
   Eye,
   Rocket,
   Laugh,
   Heart,
-  Search,
+ 
   Palette,
   Languages
 } from 'lucide-react';
@@ -25,59 +25,60 @@ import { useApp } from '../context/AppContext';
 import { Tone } from '../types';
 import { products, formatPrice } from '../stripe-config';
 import { StepNavigation } from '../components/StepNavigation';
+import { useTranslation } from 'react-i18next';
 
 const tones: { value: Tone; label: string; description: string; icon: React.ComponentType<any>; color: string }[] = [
   { 
     value: 'humoristique', 
-    label: 'Humoristique', 
-    description: 'Amusant et décalé', 
+    label: 'generator.form.tones.humoristique', 
+    description: 'generator.form.tonesDesc.humoristique', 
     icon: Laugh,
     color: 'from-yellow-400 to-orange-500'
   },
   { 
     value: 'inspirant', 
-    label: 'Inspirant', 
-    description: 'Motivant et positif', 
+    label: 'generator.form.tones.inspirant', 
+    description: 'generator.form.tonesDesc.inspirant', 
     icon: Heart,
     color: 'from-pink-400 to-rose-500'
   },
   { 
     value: 'direct', 
-    label: 'Direct et Bref', 
-    description: 'Efficace et percutant', 
+    label: 'generator.form.tones.direct', 
+    description: 'generator.form.tonesDesc.direct', 
     icon: Zap,
     color: 'from-blue-400 to-cyan-500'
   },
   { 
     value: 'mysterieux', 
-    label: 'Mystérieux', 
-    description: 'Intriguant et curieux', 
+    label: 'generator.form.tones.mysterieux', 
+    description: 'generator.form.tonesDesc.mysterieux', 
     icon: Eye,
     color: 'from-purple-400 to-indigo-500'
   },
   { 
     value: 'luxueux', 
-    label: 'Luxueux', 
-    description: 'Élégant et premium', 
+    label: 'generator.form.tones.luxueux', 
+    description: 'generator.form.tonesDesc.luxueux', 
     icon: Crown,
     color: 'from-amber-400 to-yellow-500'
   },
   { 
     value: 'techy', 
-    label: 'Technologique', 
-    description: 'Innovant et moderne', 
+    label: 'generator.form.tones.techy', 
+    description: 'generator.form.tonesDesc.techy', 
     icon: Rocket,
     color: 'from-emerald-400 to-teal-500'
   },
 ];
 
 const languages = [
-  { code: 'fr', name: 'Français', flag: '🇫🇷' },
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
-  { code: 'pt', name: 'Português', flag: '🇵🇹' },
+  { code: 'fr', name: 'generator.form.languages.fr', flag: '🇫🇷' },
+  { code: 'en', name: 'generator.form.languages.en', flag: '🇺🇸' },
+  { code: 'es', name: 'generator.form.languages.es', flag: '🇪🇸' },
+  { code: 'de', name: 'generator.form.languages.de', flag: '🇩🇪' },
+  { code: 'it', name: 'generator.form.languages.it', flag: '🇮🇹' },
+  { code: 'pt', name: 'generator.form.languages.pt', flag: '🇵🇹' },
 ];
 
 export function GeneratorPage() {
@@ -97,6 +98,7 @@ export function GeneratorPage() {
     trialLimit: 1,
     trialCount: 0
   });
+  const { t } = useTranslation();
 
   useEffect(() => {
     setAnimateIn(true);
@@ -146,8 +148,8 @@ export function GeneratorPage() {
               <CheckCircle className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-base font-semibold text-green-900">Génération gratuite</p>
-              <p className="text-sm text-green-700">Vous pouvez générer vos phrases gratuitement</p>
+              <p className="text-base font-semibold text-green-900">{t('generator.form.freeTitle')}</p>
+              <p className="text-sm text-green-700">{t('generator.form.freeDescription')}</p>
             </div>
           </div>
         </div>
@@ -162,9 +164,9 @@ export function GeneratorPage() {
               <Star className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-base font-semibold text-blue-900">Essai gratuit disponible</p>
+              <p className="text-base font-semibold text-blue-900">{t('generator.form.trialTitle')}</p>
               <p className="text-sm text-blue-700">
-                {paymentInfo.trialCount + 1}/{paymentInfo.trialLimit} essais gratuits
+                {t('generator.form.trialCount', { count: paymentInfo.trialCount + 1, limit: paymentInfo.trialLimit })}
               </p>
             </div>
           </div>
@@ -179,9 +181,9 @@ export function GeneratorPage() {
             <AlertTriangle className="w-6 h-6 text-white" />
           </div>
           <div>
-            <p className="text-base font-semibold text-orange-900">Paiement requis pour voir les résultats</p>
+            <p className="text-base font-semibold text-orange-900">{t('generator.form.paymentRequired')}</p>
             <p className="text-sm text-orange-700">
-              Générez vos phrases maintenant, puis payez {formatPrice(products[0].price)} pour les débloquer
+              {t('generator.form.paymentDescription', { price: formatPrice(products[0].price) })}
             </p>
           </div>
         </div>
@@ -205,10 +207,10 @@ export function GeneratorPage() {
             </button>
             <div className="text-center">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-                Générateur IA
+                {t('generator.title')}
               </h1>
               <p className="text-lg sm:text-xl text-gray-600">
-                Créez vos phrases d'accroche personnalisées avec l'intelligence artificielle
+                {t('generator.description')}
               </p>
             </div>
           </div>
@@ -225,14 +227,14 @@ export function GeneratorPage() {
                 <AlertTriangle className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
-                <p className="text-base font-semibold text-red-900 mb-2">Erreur</p>
+                <p className="text-base font-semibold text-red-900 mb-2">{t('notifications.error')}</p>
                 <p className="text-sm text-red-700 mb-4">{state.error}</p>
                 {state.error.includes('paiement') && (
                   <button
                     onClick={navigateToPayment}
                     className="bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:shadow-lg transition-all transform hover:scale-105"
                   >
-                    Procéder au paiement
+                    {t('generator.payment.proceed')}
                   </button>
                 )}
               </div>
@@ -248,21 +250,21 @@ export function GeneratorPage() {
             </div>
             <div>
               <label className="block text-lg font-semibold text-gray-900">
-                Votre concept ou produit
+                {t('generator.form.concept')}
               </label>
-              <p className="text-sm text-gray-600">Décrivez ce que vous voulez promouvoir</p>
+              <p className="text-sm text-gray-600">{t('generator.form.conceptDescription')}</p>
             </div>
           </div>
           <textarea
             value={concept}
             onChange={(e) => setConcept(e.target.value)}
-            placeholder="Ex: Application de méditation, Service de livraison, Plateforme de freelancing..."
+            placeholder={t('generator.form.conceptPlaceholder')}
             className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 resize-none text-lg transition-all"
             rows={4}
           />
           <p className="text-sm text-gray-500 mt-3 flex items-center space-x-2">
             <Sparkles className="w-4 h-4 text-purple-500" />
-            <span>Décrivez votre concept en quelques mots pour que l'IA puisse créer des phrases adaptées</span>
+            <span>{t('generator.form.conceptHelp')}</span>
           </p>
         </div>
 
@@ -274,9 +276,9 @@ export function GeneratorPage() {
             </div>
             <div>
               <label className="block text-lg font-semibold text-gray-900">
-                Choisissez votre ton
+                {t('generator.form.tone')}
               </label>
-              <p className="text-sm text-gray-600">Sélectionnez l'ambiance de vos phrases</p>
+              <p className="text-sm text-gray-600">{t('generator.form.toneDescription')}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -302,9 +304,9 @@ export function GeneratorPage() {
                       <IconComponent className="w-6 h-6" />
                     </div>
                     <div className="text-center">
-                      <div className="text-sm font-semibold">{tone.label}</div>
+                      <div className="text-sm font-semibold">{t(tone.label)}</div>
                       <div className={`text-xs mt-1 ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
-                        {tone.description}
+                        {t(tone.description)}
                       </div>
                     </div>
                   </div>
@@ -322,9 +324,9 @@ export function GeneratorPage() {
             </div>
             <div>
               <label className="block text-lg font-semibold text-gray-900">
-                Langue de génération
+                {t('generator.form.language')}
               </label>
-              <p className="text-sm text-gray-600">Choisissez la langue de vos phrases</p>
+              <p className="text-sm text-gray-600">{t('generator.form.languageDescription')}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -340,7 +342,7 @@ export function GeneratorPage() {
               >
                 <div className="flex flex-col items-center space-y-2">
                   <div className="text-2xl">{lang.flag}</div>
-                  <div className="text-sm font-semibold">{lang.name}</div>
+                  <div className="text-sm font-semibold">{t(lang.name)}</div>
                 </div>
               </button>
             ))}
@@ -361,12 +363,12 @@ export function GeneratorPage() {
             {state.isGenerating ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin" />
-                <span>Génération en cours...</span>
+                <span>{t('generator.form.generating')}</span>
               </>
             ) : (
               <>
                 <Wand2 className="w-6 h-6" />
-                <span>Générer mes phrases d'accroche</span>
+                <span>{t('generator.form.generate')}</span>
                 <ArrowRight className="w-6 h-6" />
               </>
             )}

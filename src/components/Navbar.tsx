@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { Zap, Menu, X, Home, Wand2, HelpCircle, Mail, Shield } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from './auth/AuthWrapper';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Get auth context to check if user is admin
   let isAdmin = false;
@@ -65,7 +68,7 @@ export function Navbar() {
               }`}
             >
               <Home className="w-4 h-4" />
-              <span>Accueil</span>
+              <span>{t('common.home')}</span>
             </Link>
             
             <Link
@@ -77,7 +80,7 @@ export function Navbar() {
               }`}
             >
               <Wand2 className="w-4 h-4" />
-              <span>Générateur</span>
+              <span>{t('common.generator')}</span>
             </Link>
 
             <a
@@ -85,7 +88,7 @@ export function Navbar() {
               className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
             >
               <HelpCircle className="w-4 h-4" />
-              <span>Aide</span>
+              <span>{t('common.help')}</span>
             </a>
 
             <a
@@ -93,7 +96,7 @@ export function Navbar() {
               className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
             >
               <Mail className="w-4 h-4" />
-              <span>Contact</span>
+              <span>{t('common.contact')}</span>
             </a>
 
             {/* Admin link - only show for authenticated admin users */}
@@ -107,18 +110,19 @@ export function Navbar() {
                 }`}
               >
                 <Shield className="w-4 h-4" />
-                <span>Admin</span>
+                <span>{t('common.admin')}</span>
               </button>
             )}
           </div>
 
           {/* CTA Button Desktop */}
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center space-x-4">
+            <LanguageSwitcher />
             <Link
               to="/generator"
               className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all transform hover:scale-105"
             >
-              Créer maintenant
+              {t('common.createNow')}
             </Link>
           </div>
 
@@ -149,7 +153,7 @@ export function Navbar() {
                 }`}
               >
                 <Home className="w-5 h-5" />
-                <span>Accueil</span>
+                <span>{t('common.home')}</span>
               </Link>
               
               <Link
@@ -162,7 +166,7 @@ export function Navbar() {
                 }`}
               >
                 <Wand2 className="w-5 h-5" />
-                <span>Générateur</span>
+                <span>{t('common.generator')}</span>
               </Link>
 
               <a
@@ -171,7 +175,7 @@ export function Navbar() {
                 className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
               >
                 <HelpCircle className="w-5 h-5" />
-                <span>Aide</span>
+                <span>{t('common.help')}</span>
               </a>
 
               <a
@@ -180,7 +184,7 @@ export function Navbar() {
                 className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
               >
                 <Mail className="w-5 h-5" />
-                <span>Contact</span>
+                <span>{t('common.contact')}</span>
               </a>
 
               {/* Admin link - only show for authenticated admin users in mobile menu */}
@@ -194,18 +198,21 @@ export function Navbar() {
                   }`}
                 >
                   <Shield className="w-5 h-5" />
-                  <span>Admin</span>
+                  <span>{t('common.admin')}</span>
                 </button>
               )}
 
-              <div className="pt-4 border-t border-gray-100">
+              <div className="pt-4 border-t border-gray-100 space-y-3">
+                <div className="flex justify-center">
+                  <LanguageSwitcher />
+                </div>
                 <Link
                   to="/generator"
                   onClick={closeMobileMenu}
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-3 rounded-lg font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all flex items-center justify-center space-x-2"
                 >
                   <Wand2 className="w-4 h-4" />
-                  <span>Créer maintenant</span>
+                  <span>{t('common.createNow')}</span>
                 </Link>
               </div>
             </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronRight, Home } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface BreadcrumbItem {
   label: string;
@@ -10,16 +11,17 @@ interface BreadcrumbItem {
 
 export function Breadcrumb() {
   const location = useLocation();
+  const { t } = useTranslation();
 
   const getBreadcrumbItems = (): BreadcrumbItem[] => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
     
     if (pathSegments.length === 0) {
-      return [{ label: 'Accueil' }];
+      return [{ label: t('breadcrumb.home') }];
     }
 
     const items: BreadcrumbItem[] = [
-      { label: 'Accueil', path: '/', icon: <Home className="w-4 h-4" /> }
+      { label: t('breadcrumb.home'), path: '/', icon: <Home className="w-4 h-4" /> }
     ];
 
     let currentPath = '';
@@ -30,31 +32,31 @@ export function Breadcrumb() {
       let label = segment;
       switch (segment) {
         case 'admin':
-          label = 'Administration';
+          label = t('breadcrumb.admin');
           break;
         case 'generator':
-          label = 'Générateur';
+          label = t('breadcrumb.generator');
           break;
         case 'payment':
-          label = 'Paiement';
+          label = t('breadcrumb.payment');
           break;
         case 'results':
-          label = 'Résultats';
+          label = t('breadcrumb.results');
           break;
         case 'success':
-          label = 'Succès';
+          label = t('breadcrumb.success');
           break;
         case 'traffic':
-          label = 'Trafic';
+          label = t('breadcrumb.traffic');
           break;
         case 'users':
-          label = 'Utilisateurs';
+          label = t('breadcrumb.users');
           break;
         case 'orders':
-          label = 'Commandes';
+          label = t('breadcrumb.orders');
           break;
         case 'seo':
-          label = 'SEO';
+          label = t('breadcrumb.seo');
           break;
         default:
           label = segment.charAt(0).toUpperCase() + segment.slice(1);
@@ -74,7 +76,7 @@ export function Breadcrumb() {
   const items = getBreadcrumbItems();
 
   // Don't show breadcrumb on home page
-  if (items.length === 1 && items[0].label === 'Accueil') {
+  if (items.length === 1 && items[0].label === t('breadcrumb.home')) {
     return null;
   }
 

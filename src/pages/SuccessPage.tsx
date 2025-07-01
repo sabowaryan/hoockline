@@ -3,12 +3,14 @@ import { CheckCircle, Home, RefreshCw, Copy, Download, Star, ArrowRight, CreditC
 import { useApp } from '../context/AppContext';
 import { getUserOrders } from '../services/stripe';
 import { products, formatPrice } from '../stripe-config';
+import { useTranslation } from 'react-i18next';
 
 export function SuccessPage() {
   const { navigateToHome, navigateToGenerator, state } = useApp();
   const [isLoading, setIsLoading] = useState(true);
   const [orderData, setOrderData] = useState<any>(null);
   const [copiedPhrases, setCopiedPhrases] = useState<Set<string>>(new Set());
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchOrderData = async () => {
@@ -81,7 +83,7 @@ export function SuccessPage() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Chargement de votre commande...</p>
+          <p className="text-gray-600">{t('success.loading')}</p>
         </div>
       </div>
     );
@@ -98,15 +100,15 @@ export function SuccessPage() {
             <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 text-green-600" />
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            🎉 Paiement réussi !
+            {t('success.title')}
           </h1>
           <p className="text-lg sm:text-xl text-gray-600 mb-4 px-4 sm:px-0">
-            Votre pack <span className="font-semibold text-purple-600">{product.name}</span> a été débloqué avec succès
+            {t('success.unlocked', { product: product.name })}
           </p>
           {orderData && (
             <div className="inline-flex items-center space-x-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm">
               <CheckCircle className="w-4 h-4" />
-              <span>Commande #{orderData.order_id} • {new Date(orderData.order_date).toLocaleDateString('fr-FR')}</span>
+              <span>{t('success.order', { id: orderData.order_id, date: new Date(orderData.order_date).toLocaleDateString('fr-FR') })}</span>
             </div>
           )}
         </div>
@@ -118,21 +120,21 @@ export function SuccessPage() {
               <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
                 <CreditCard className="w-5 h-5 text-purple-600" />
               </div>
-              Récapitulatif de votre commande
+              {t('success.summary')}
             </h3>
             <div className="grid sm:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-gray-600 flex items-center">
                     <CreditCard className="w-4 h-4 mr-2" />
-                    Produit
+                    {t('success.product')}
                   </span>
                   <span className="font-semibold text-gray-900">{product.name}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-gray-600 flex items-center">
                     <span className="w-4 h-4 mr-2">💰</span>
-                    Prix
+                    {t('success.price')}
                   </span>
                   <span className="font-semibold text-gray-900">
                     ${(orderData.amount_total / 100).toFixed(2)}
@@ -141,16 +143,16 @@ export function SuccessPage() {
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-gray-600 flex items-center">
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Statut
+                    {t('success.status')}
                   </span>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    ✅ Payé
+                    ✅ {t('success.paid')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <span className="text-gray-600 flex items-center">
                     <Calendar className="w-4 h-4 mr-2" />
-                    Date
+                    {t('success.date')}
                   </span>
                   <span className="font-semibold text-gray-900">
                     {new Date(orderData.order_date).toLocaleDateString('fr-FR', {
@@ -166,28 +168,28 @@ export function SuccessPage() {
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4">
                 <h4 className="font-medium text-gray-900 mb-3 flex items-center">
                   <Star className="w-4 h-4 text-purple-600 mr-2" />
-                  Ce que vous recevez :
+                  {t('success.receive')}
                 </h4>
                 <ul className="text-sm text-gray-600 space-y-2">
                   <li className="flex items-center">
                     <CheckCircle className="w-3 h-3 text-green-500 mr-2" />
-                    10 phrases d'accroche uniques
+                    {t('success.feature.0')}
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="w-3 h-3 text-green-500 mr-2" />
-                    Générées par IA Gemini
+                    {t('success.feature.1')}
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="w-3 h-3 text-green-500 mr-2" />
-                    Copie en un clic
+                    {t('success.feature.2')}
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="w-3 h-3 text-green-500 mr-2" />
-                    Téléchargement possible
+                    {t('success.feature.3')}
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="w-3 h-3 text-green-500 mr-2" />
-                    Accès permanent
+                    {t('success.feature.4')}
                   </li>
                 </ul>
               </div>
@@ -201,10 +203,10 @@ export function SuccessPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
               <div>
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-                  Vos phrases d'accroche personnalisées
+                  {t('success.generatedTitle')}
                 </h3>
                 <p className="text-gray-600">
-                  Générées pour : <span className="font-medium">"{state.generationRequest?.concept}"</span>
+                  {t('success.generatedFor', { concept: state.generationRequest?.concept })}
                 </p>
               </div>
               <button
@@ -212,7 +214,7 @@ export function SuccessPage() {
                 className="mt-4 sm:mt-0 inline-flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <Download className="w-4 h-4" />
-                <span>Télécharger tout</span>
+                <span>{t('success.downloadAll')}</span>
               </button>
             </div>
             
@@ -249,12 +251,12 @@ export function SuccessPage() {
                       {copiedPhrases.has(phrase.id) ? (
                         <>
                           <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span className="text-xs sm:text-sm font-medium hidden sm:inline">Copié !</span>
+                          <span className="text-xs sm:text-sm font-medium hidden sm:inline">{t('success.copied')}</span>
                         </>
                       ) : (
                         <>
                           <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span className="text-xs sm:text-sm font-medium hidden sm:inline">Copier</span>
+                          <span className="text-xs sm:text-sm font-medium hidden sm:inline">{t('success.copy')}</span>
                         </>
                       )}
                     </button>
@@ -268,11 +270,10 @@ export function SuccessPage() {
         {/* Next Steps */}
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-6 sm:p-8 text-center text-white">
           <h3 className="text-xl sm:text-2xl font-bold mb-4">
-            🚀 Prêt à conquérir le monde !
+            {t('success.ctaTitle')}
           </h3>
           <p className="text-purple-100 mb-6 text-base sm:text-lg">
-            Utilisez ces phrases pour vos titres, vos slogans ou vos posts. 
-            Revenez quand vous le souhaitez pour générer de nouvelles accroches dans d'autres langues !
+            {t('success.ctaDesc')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <button
@@ -280,7 +281,7 @@ export function SuccessPage() {
               className="inline-flex items-center justify-center space-x-2 bg-white text-purple-600 px-4 sm:px-6 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors group"
             >
               <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-180 transition-transform duration-500" />
-              <span>Générer d'autres phrases</span>
+              <span>{t('success.generateMore')}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
@@ -288,7 +289,7 @@ export function SuccessPage() {
               className="inline-flex items-center justify-center space-x-2 bg-purple-500/20 text-white px-4 sm:px-6 py-3 rounded-lg font-semibold hover:bg-purple-500/30 transition-colors border border-purple-400/30"
             >
               <Home className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Retour à l'accueil</span>
+              <span>{t('success.backHome')}</span>
             </button>
           </div>
         </div>
@@ -301,10 +302,10 @@ export function SuccessPage() {
             </div>
             <div>
               <p className="text-gray-900 font-medium mb-1">
-                "Clicklone m'a fait gagner des heures de brainstorming ! Les phrases générées sont parfaites pour mes campagnes."
+                {t('success.testimonial.text')}
               </p>
               <p className="text-gray-600 text-sm">
-                - Sarah M., Marketing Manager
+                {t('success.testimonial.author')}
               </p>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { CheckCircle, Circle, ArrowRight, Lock } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { isPaymentRequired, areFreeTrialsAllowed, getTrialLimit } from '../services/settings';
+import { useTranslation } from 'react-i18next';
 
 interface Step {
   id: string;
@@ -25,6 +26,7 @@ export function StepNavigation() {
     trialLimit: 1
   });
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadPaymentSettings();
@@ -83,27 +85,27 @@ export function StepNavigation() {
   const baseSteps: Omit<Step, 'completed' | 'current' | 'available'>[] = [
     {
       id: 'home',
-      label: 'Accueil',
+      label: t('stepnav.home'),
       path: '/',
-      description: 'Découverte du service'
+      description: t('stepnav.homeDesc')
     },
     {
       id: 'generator',
-      label: 'Générateur',
+      label: t('stepnav.generator'),
       path: '/generator',
-      description: 'Configuration et génération'
+      description: t('stepnav.generatorDesc')
     },
     {
       id: 'payment',
-      label: 'Paiement',
+      label: t('stepnav.payment'),
       path: '/payment',
-      description: 'Sécurisation du paiement'
+      description: t('stepnav.paymentDesc')
     },
     {
       id: 'results',
-      label: 'Résultats',
+      label: t('stepnav.results'),
       path: '/results',
-      description: 'Vos phrases d\'accroche'
+      description: t('stepnav.resultsDesc')
     }
   ];
 
@@ -143,21 +145,21 @@ export function StepNavigation() {
       available = canAccessPayment();
       if (!available) {
         disabledReason = !paymentSettings.paymentRequired 
-          ? 'Paiement non requis' 
+          ? t('stepnav.paymentNotRequired')
           : localStorage.getItem('payment_completed') === 'true'
-          ? 'Paiement déjà effectué'
+          ? t('stepnav.paymentAlreadyDone')
           : paymentSettings.freeTrialsAllowed && parseInt(localStorage.getItem('trial_count') || '0') < paymentSettings.trialLimit
-          ? 'Essais gratuits disponibles'
-          : 'Non disponible';
+          ? t('stepnav.freeTrialsAvailable')
+          : t('stepnav.notAvailable');
       }
     } else if (step.id === 'results') {
       available = canAccessResults() && state.generatedPhrases.length > 0;
       if (!available) {
         disabledReason = state.generatedPhrases.length === 0 
-          ? 'Aucune phrase générée' 
+          ? t('stepnav.noGenerated')
           : !canAccessResults()
-          ? 'Accès non autorisé'
-          : 'Non disponible';
+          ? t('stepnav.unauthorized')
+          : t('stepnav.notAvailable');
       }
     }
     
@@ -198,9 +200,9 @@ export function StepNavigation() {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Progression</h3>
+        <h3 className="text-base font-semibold text-gray-900">{t('stepnav.title')}</h3>
         <div className="text-sm text-gray-500">
-          Étape {updatedSteps.findIndex(s => s.current) + 1} sur {updatedSteps.length}
+          {t('stepnav.progress', { current: updatedSteps.findIndex(s => s.current) + 1, total: updatedSteps.length })}
         </div>
       </div>
       
