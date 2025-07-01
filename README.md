@@ -104,7 +104,7 @@ Clicklone est un générateur intelligent de phrases d'accroche propulsé par l'
 
 ```bash
 # Cloner le repository
-git clone https://github.com/votre-username/clicklone.git
+git clone https://github.com/sabowaryan/clicklone.git
 cd clicklone
 
 # Installer les dépendances

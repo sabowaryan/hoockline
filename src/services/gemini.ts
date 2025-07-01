@@ -250,6 +250,11 @@ const toneInstructions: Record<Tone, Record<string, string>> = {
 };
 
 export async function generateCatchphrasesWithAI(concept: string, tone: Tone, language: string = 'fr'): Promise<string[]> {
+  // Vérifier si la clé API est configurée
+  if (!isGeminiConfigured()) {
+    throw new Error('Clé API Gemini non configurée. Veuillez configurer VITE_GEMINI_API_KEY dans votre fichier .env');
+  }
+
   const model = genAI.getGenerativeModel({ 
     model: 'gemini-2.0-flash-exp',
     generationConfig: {
@@ -263,98 +268,119 @@ export async function generateCatchphrasesWithAI(concept: string, tone: Tone, la
   const targetLanguage = languageMap[language] || 'français';
   const toneInstruction = toneInstructions[tone][language] || toneInstructions[tone]['fr'];
   
-  const prompt = `Tu es un copywriter expert multilingue, spécialisé dans les slogans qui convertissent. Tu maîtrises parfaitement la psychologie du consommateur et les nuances culturelles.
+  const prompt = `Tu es un copywriter publicitaire de haut niveau, multilingue, expert en psychologie du consommateur et en nuances culturelles locales. Tu crées des phrases d'accroche qui convertissent immédiatement.
 
-🎯 MISSION PRÉCISE :
-Crée exactement 10 phrases d'accroche commerciales pour : "${concept}"
-LANGUE DE SORTIE : ${targetLanguage.toUpperCase()}
+🎯 OBJECTIF :
+Génère exactement 10 slogans publicitaires irrésistibles pour le concept suivant :  
+"${concept}"
 
-📋 TON REQUIS : ${tone.toUpperCase()}
+🗣️ LANGUE DE SORTIE : ${targetLanguage.toUpperCase()}
+
+🎭 TON REQUIS : ${tone.toUpperCase()}
 ${toneInstruction}
 
-⚡ RÈGLES STRICTES :
-1. LONGUEUR : 4 à 8 mots maximum par phrase
-2. IMPACT : Chaque mot doit avoir un but précis
-3. MÉMORABILITÉ : Facile à retenir et répéter
-4. LANGUE PARFAITE : Syntaxe irréprochable en ${targetLanguage}
-5. ORIGINALITÉ : Évite les clichés du marketing
-6. CONVERSION : Doit donner envie d'acheter/essayer
-7. COHÉRENCE : Toutes les phrases doivent respecter le ton ${tone}
-8. CULTURE : Adapte aux références culturelles de la langue cible
+📏 CONTRAINTES STRICTES :
+1. 4 à 8 mots maximum par phrase
+2. Chaque mot doit être stratégique, aucun mot inutile
+3. Phrases ultra-mémorables, faciles à répéter
+4. Parfaitement naturelles et idiomatiques en ${targetLanguage}
+5. Zéro cliché, pas de blabla marketing générique
+6. Chaque accroche doit inciter à l’action (essayer, cliquer, acheter)
+7. Toutes doivent respecter le ton ${tone}
+8. Culturellement adaptées à la langue cible
 
-🧠 TECHNIQUES AVANCÉES À UTILISER :
-- Allitérations et assonances pour la mémorabilité
-- Rythme et cadence (alternance syllabes courtes/longues)
-- Mots sensoriels et émotionnels
-- Urgence subtile sans être agressive
-- Bénéfice client clair et immédiat
-- Références culturelles appropriées à la langue
+💡 TECHNIQUES À UTILISER :
+- Allitérations, assonances, répétitions efficaces
+- Rythme fluide : alternance syllabes courtes/longues
+- Vocabulaire émotionnel et sensoriel
+- Sentiment d’urgence subtil (pas agressif)
+- Clarté immédiate du bénéfice client
+- Références culturelles pertinentes et modernes
 
-❌ INTERDICTIONS :
-- Phrases génériques ("La solution parfaite", "Révolutionnaire")
-- Superlatifs faibles ("très", "assez", "plutôt")
-- Jargon technique incompréhensible
-- Phrases trop longues ou complexes
-- Répétitions de structure
+🚫 À ÉVITER ABSOLUMENT :
+- Généralités sans impact ("La meilleure solution", etc.)
+- Superlatifs vagues ou mous ("très", "plutôt", etc.)
+- Jargon technique, formulations froides
+- Structures répétitives ou trop complexes
 - Traductions littérales maladroites
 
-✅ VALIDATION :
-Chaque phrase doit réussir le test : "Est-ce que ça me donnerait envie de cliquer/acheter dans cette culture ?"
+✅ TEST FINAL POUR CHAQUE PHRASE :
+> “Est-ce que cette phrase me donne vraiment envie d’agir (cliquer, acheter, tester), **dans la culture ciblée** ?”
 
 📤 FORMAT DE SORTIE OBLIGATOIRE :
-Réponds UNIQUEMENT avec les 10 phrases en ${targetLanguage}, une par ligne, sans numérotation, sans formatage, sans explication.
+Réponds UNIQUEMENT avec les **10 slogans**, en ${targetLanguage}, **un par ligne**, sans numérotation, sans commentaires ni balises.
 
-GÉNÈRE MAINTENANT :`;
+GÉNÈRE MAINTENANT :
+`;
 
-  try {
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    
-    // Parse and clean the response
-    const phrases = text
-      .split('\n')
-      .map(phrase => phrase.trim())
-      .filter(phrase => {
-        // Remove empty lines, numbered lines, and explanatory text
-        return phrase.length > 0 && 
-               !phrase.match(/^\d+[\.\)\-\:]/) && 
-               !phrase.match(/^(voici|voilà|exemples?|phrases?|here|examples?|aquí|ejemplos?|hier|beispiele?|ecco|esempi?|aqui|exemplos?)/i) &&
-               phrase.length <= 80; // Reasonable max length
-      })
-      .slice(0, 10); // Take only first 10 valid phrases
-    
-    // Quality validation
-    if (phrases.length < 8) {
-      throw new Error(`Qualité insuffisante : seulement ${phrases.length} phrases valides générées`);
-    }
-    
-    // Ensure we have exactly 10 phrases (pad if necessary with retry)
-    if (phrases.length < 10) {
-      console.warn(`Seulement ${phrases.length} phrases générées, tentative de complément...`);
-      
-      // Quick retry for missing phrases
-      const complementPrompt = `Génère ${10 - phrases.length} phrases d'accroche supplémentaires pour "${concept}" en ton ${tone} et en ${targetLanguage}, différentes de celles-ci :
+
+try {
+  // 1. Génération principale
+  const result = await model.generateContent(prompt);
+  const text = (await result.response).text();
+
+  // 2. Extraction et nettoyage
+  let phrases = text
+    .split('\n')
+    .map(phrase => phrase.trim())
+    .filter(phrase =>
+      phrase.length > 0 &&
+      phrase.length <= 80 &&
+      !/^\d+[\.\)\-\:]/.test(phrase) && // Exclut les listes numérotées
+      !/^(voici|voilà|examples?|phrases?|here|aquí|hier|ecco|aqui|exemples?)/i.test(phrase) // Exclut les phrases explicatives
+    )
+    .slice(0, 10); // Limite à 10 max
+
+  // 3. Validation qualité
+  if (phrases.length < 8) {
+    throw new Error(`⚠️ Seulement ${phrases.length} phrases valides générées. Requête rejetée pour qualité insuffisante.`);
+  }
+
+  // 4. Complément intelligent si phrases manquantes
+  if (phrases.length < 10) {
+    console.warn(`🔄 Complément demandé : ${10 - phrases.length} phrases manquantes.`);
+
+    const complementPrompt = `
+Génère ${10 - phrases.length} slogans supplémentaires pour : "${concept}"
+LANGUE : ${targetLanguage}, TON : ${tone}
+⚠️ Ne répète aucune des phrases suivantes :
 ${phrases.join('\n')}
+RÈGLES : 4-8 mots, 1 phrase par ligne, aucune numérotation.
+`.trim();
 
-Même format : une phrase par ligne, ${tone}, 4-8 mots max, en ${targetLanguage}.`;
-      
-      const complementResult = await model.generateContent(complementPrompt);
-      const complementText = complementResult.response.text();
-      const complementPhrases = complementText
-        .split('\n')
-        .map(p => p.trim())
-        .filter(p => p.length > 0 && !p.match(/^\d+[\.\)\-\:]/))
-        .slice(0, 10 - phrases.length);
-      
-      phrases.push(...complementPhrases);
-    }
+    const complementResult = await model.generateContent(complementPrompt);
+    const complementText = (await complementResult.response).text();
+    
+    const complementPhrases = complementText
+      .split('\n')
+      .map(p => p.trim())
+      .filter(p =>
+        p.length > 0 &&
+        p.length <= 80 &&
+        !/^\d+[\.\)\-\:]/.test(p)
+      )
+      .slice(0, 10 - phrases.length);
+
+    phrases.push(...complementPhrases);
+  }
     
     return phrases.slice(0, 10);
     
   } catch (error) {
     console.error('Erreur Gemini:', error);
-    throw new Error('Impossible de générer les phrases avec Gemini. Vérifiez votre connexion.');
+    
+    // Gestion d'erreur plus spécifique
+    if (error instanceof Error) {
+      if (error.message.includes('API key')) {
+        throw new Error('Clé API Gemini non configurée ou invalide. Veuillez vérifier votre configuration.');
+      } else if (error.message.includes('quota') || error.message.includes('limit')) {
+        throw new Error('Limite d\'utilisation de l\'API Gemini atteinte. Veuillez réessayer plus tard.');
+      } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        throw new Error('Erreur de connexion. Vérifiez votre connexion internet et réessayez.');
+      }
+    }
+    
+    throw new Error('Erreur lors de la génération avec Gemini. Veuillez réessayer.');
   }
 }
 

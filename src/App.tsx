@@ -1,63 +1,137 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { AppProvider, useApp } from './context/AppContext';
-import { AuthWrapper, useAuth } from './components/auth/AuthWrapper';
-import { Layout } from './components/Layout';
-import { HomePage } from './components/HomePage';
-import { Generator } from './components/Generator';
-import { Payment } from './components/Payment';
-import { Results } from './components/Results';
-import { SuccessPage } from './components/SuccessPage';
-import { AdminDashboard } from './components/AdminDashboard';
-import { SEOManager } from './components/SEOManager';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AppProvider } from './context/AppContext';
+import { AuthWrapper } from './components/auth/AuthWrapper';
+import { PublicLayout } from './layouts/PublicLayout';
+import { AdminLayout } from './layouts/AdminLayout';
+import { HomePage } from './pages/HomePage';
+import { GeneratorPage } from './pages/GeneratorPage';
+import { Payment } from './pages/Payment';
+import { ResultsPage } from './pages/ResultsPage';
+import { SuccessPage } from './pages/SuccessPage';
+import { AdminDashboard } from './pages/Admin/AdminDashboard';
+import { TrafficPage } from './pages/Admin/TrafficPage';
+import { UsersPage } from './pages/Admin/UsersPage';
+import { OrdersPage } from './pages/Admin/OrdersPage';
+import { SEOManagerPage } from './pages/Admin/SEOManagerPage';
+import { AnalyticsPage } from './pages/Admin/AnalyticsPage';
+import { SettingsPage } from './pages/Admin/SettingsPage';
+import { SEOManager } from './components/common/SEOManager';
+import { NotificationContainer } from './components/common/Notification';
 import { trackPageViewDebounced } from './services/analytics';
 
-function AppContent() {
-  const { state } = useApp();
-  const location = useLocation();
-
-  // Track page views when location changes
+function TrackPageView() {
   useEffect(() => {
-    trackPageViewDebounced(location.pathname);
-  }, [location.pathname]);
-
-  switch (state.currentStep) {
-    case 'home':
-      return <HomePage />;
-    case 'generator':
-      return <Generator />;
-    case 'payment':
-      return <Payment />;
-    case 'results':
-      return <Results />;
-    case 'success':
-      return <SuccessPage />;
-    default:
-      return <HomePage />;
-  }
+    const handlePopState = () => {
+      trackPageViewDebounced(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+  return null;
 }
 
 function App() {
   return (
     <BrowserRouter>
       <SEOManager />
-      <Routes>
-        {/* Public routes with Layout */}
-        <Route path="/" element={
-          <AppProvider>
-            <Layout>
-              <AppContent />
-            </Layout>
-          </AppProvider>
-        } />
-        
-        {/* Admin route without public Layout */}
-        <Route path="/admin" element={
-          <AuthWrapper>
-            {(user) => <AdminDashboard user={user} />}
-          </AuthWrapper>
-        } />
-      </Routes>
+      <TrackPageView />
+      <AppProvider>
+        <NotificationContainer />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={
+            <PublicLayout>
+              <HomePage />
+            </PublicLayout>
+          } />
+          <Route path="/generator" element={
+            <PublicLayout>
+              <GeneratorPage />
+            </PublicLayout>
+          } />
+          <Route path="/payment" element={
+            <PublicLayout>
+              <Payment />
+            </PublicLayout>
+          } />
+          <Route path="/results" element={
+            <PublicLayout>
+              <ResultsPage />
+            </PublicLayout>
+          } />
+          <Route path="/success" element={
+            <PublicLayout>
+              <SuccessPage />
+            </PublicLayout>
+          } />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={
+            <AuthWrapper>
+              {(user) => (
+                <AdminLayout user={user}>
+                  <AdminDashboard />
+                </AdminLayout>
+              )}
+            </AuthWrapper>
+          } />
+          <Route path="/admin/traffic" element={
+            <AuthWrapper>
+              {(user) => (
+                <AdminLayout user={user}>
+                  <TrafficPage />
+                </AdminLayout>
+              )}
+            </AuthWrapper>
+          } />
+          <Route path="/admin/users" element={
+            <AuthWrapper>
+              {(user) => (
+                <AdminLayout user={user}>
+                  <UsersPage />
+                </AdminLayout>
+              )}
+            </AuthWrapper>
+          } />
+          <Route path="/admin/orders" element={
+            <AuthWrapper>
+              {(user) => (
+                <AdminLayout user={user}>
+                  <OrdersPage />
+                </AdminLayout>
+              )}
+            </AuthWrapper>
+          } />
+          <Route path="/admin/seo" element={
+            <AuthWrapper>
+              {(user) => (
+                <AdminLayout user={user}>
+                  <SEOManagerPage />
+                </AdminLayout>
+              )}
+            </AuthWrapper>
+          } />
+          <Route path="/admin/analytics" element={
+            <AuthWrapper>
+              {(user) => (
+                <AdminLayout user={user}>
+                  <AnalyticsPage />
+                </AdminLayout>
+              )}
+            </AuthWrapper>
+          } />
+          <Route path="/admin/settings" element={
+            <AuthWrapper>
+              {(user) => (
+                <AdminLayout user={user}>
+                  <SettingsPage />
+                </AdminLayout>
+              )}
+            </AuthWrapper>
+          } />
+        </Routes>
+      </AppProvider>
     </BrowserRouter>
   );
 }

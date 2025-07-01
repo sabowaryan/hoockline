@@ -1,9 +1,9 @@
 import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
-import { LoginPage } from './LoginPage';
-import { SignupPage } from './SignupPage';
-import { UnauthorizedAccess } from './UnauthorizedAccess';
+import { LoginPage } from '../../pages/Auth/LoginPage';
+import { SignupPage } from '../../pages/Auth/SignupPage';
+import { UnauthorizedAccess } from '../../pages/Auth/UnauthorizedAccess';
 
 interface AuthWrapperProps {
   children: (user: User) => React.ReactNode;
@@ -26,6 +26,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Cache pour éviter les rechargements inutiles
+const profileCache = new Map<string, { profile: UserProfile; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -40,10 +44,34 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   const [loading, setLoading] = useState(true);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   
-  // Use refs to prevent infinite loops
+  // Use refs to prevent infinite loops and track state
   const initialized = useRef(false);
+  const lastUserId = useRef<string | null>(null);
+  const isFetchingProfile = useRef(false);
 
   const fetchUserProfile = async (userId: string) => {
+    // Éviter les requêtes multiples simultanées
+    if (isFetchingProfile.current) {
+      return;
+    }
+
+    // Vérifier le cache avec une durée plus longue
+    const cached = profileCache.get(userId);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log('Using cached profile for user:', userId);
+      setUserProfile(cached.profile);
+      return;
+    }
+
+    // Éviter les requêtes trop fréquentes
+    const now = Date.now();
+    if (lastUserId.current === userId && now - (cached?.timestamp || 0) < 5000) {
+      console.log('Profile fetch too recent, using cached data');
+      return;
+    }
+
+    isFetchingProfile.current = true;
+    
     try {
       console.log('Fetching profile for user:', userId);
       
@@ -75,6 +103,8 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           } else {
             console.log('Created new profile:', newProfile);
             setUserProfile(newProfile);
+            // Mettre en cache le nouveau profil
+            profileCache.set(userId, { profile: newProfile, timestamp: Date.now() });
           }
         } else {
           setUserProfile(null);
@@ -82,10 +112,14 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       } else {
         console.log('Profile found:', data);
         setUserProfile(data);
+        // Mettre en cache le profil
+        profileCache.set(userId, { profile: data, timestamp: Date.now() });
       }
     } catch (error) {
       console.error('Unexpected error fetching user profile:', error);
       setUserProfile(null);
+    } finally {
+      isFetchingProfile.current = false;
     }
   };
 
@@ -118,6 +152,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
 
         if (mounted) {
           setUser(session?.user ?? null);
+          lastUserId.current = session?.user?.id ?? null;
           
           if (session?.user) {
             await fetchUserProfile(session.user.id);
@@ -141,15 +176,29 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
 
     initializeAuth();
 
-    // Listen for auth changes
+    // Listen for auth changes - optimisé pour éviter les rechargements inutiles
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
       
-      if (mounted && initialized.current) {
-        setLoading(true); // Show loading during profile fetch
+      if (!mounted || !initialized.current) {
+        return;
+      }
+
+      const newUserId = session?.user?.id ?? null;
+      
+      // Éviter les rechargements si l'utilisateur n'a pas changé
+      if (newUserId === lastUserId.current && event !== 'SIGNED_OUT') {
+        console.log('User unchanged, skipping profile reload');
+        return;
+      }
+
+      // Seulement recharger si nécessaire
+      if (event === 'SIGNED_OUT' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setLoading(true);
         setUser(session?.user ?? null);
+        lastUserId.current = newUserId;
         
         if (session?.user) {
           await fetchUserProfile(session.user.id);
@@ -161,9 +210,32 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       }
     });
 
+    // Gestion de la visibilité de la page pour éviter les rechargements lors du changement de fenêtre
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && initialized.current && user) {
+        // Vérifier si la session est toujours valide sans recharger le profil
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session?.user?.id !== lastUserId.current) {
+            console.log('Session changed during visibility change, updating...');
+            setUser(session?.user ?? null);
+            lastUserId.current = session?.user?.id ?? null;
+            
+            if (session?.user) {
+              fetchUserProfile(session.user.id);
+            } else {
+              setUserProfile(null);
+            }
+          }
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []); // Empty dependency array to run only once
 
@@ -210,7 +282,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     return (
       <AuthContext.Provider value={authContextValue}>
         <LoginPage
-          onSwitchToLogin={() => setAuthMode('signup')}
+          onSwitchToSignup={() => setAuthMode('signup')}
           onLoginSuccess={handleAuthSuccess}
         />
       </AuthContext.Provider>
@@ -236,6 +308,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
               <button
                 onClick={() => {
                   initialized.current = false;
+                  profileCache.clear(); // Vider le cache
                   window.location.reload();
                 }}
                 className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mr-2"

@@ -14,9 +14,9 @@ import {
   Filter
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { ConversionFunnel } from './analytics/ConversionFunnel';
-import { TrafficSources } from './analytics/TrafficSources';
-import { AdvancedAnalytics } from './analytics/AdvancedAnalytics';
+import { ConversionFunnel } from '../../components/admin/analytics/ConversionFunnel';
+import { TrafficSources } from '../../components/admin/analytics/TrafficSources';
+import { AdvancedAnalytics } from '../../components/admin/analytics/AdvancedAnalytics';
 
 interface PageView {
   id: number;
@@ -151,7 +151,7 @@ const PageRow = memo(({ page, index }: { page: PopularPage; index: number }) => 
   );
 });
 
-export const TrafficPage = memo(() => {
+export function TrafficPage() {
   const [stats, setStats] = useState<TrafficStats>({
     totalViews: 0,
     uniqueSessions: 0,
@@ -496,6 +496,6 @@ export const TrafficPage = memo(() => {
       {renderContent()}
     </div>
   );
-});
+}
 
 TrafficPage.displayName = 'TrafficPage';

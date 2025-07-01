@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
-import { getSEOSettings, generateStructuredData, getDefaultSEOSettings, type SEOSettings } from '../services/seo';
+import { getSEOSettings, generateStructuredData, getDefaultSEOSettings, type SEOSettings } from '../../services/seo';
 
 export function SEOManager() {
   const location = useLocation();

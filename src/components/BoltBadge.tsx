@@ -6,7 +6,7 @@ const BoltBadge: React.FC = () => (
     target="_blank"
     rel="noopener noreferrer"
     aria-label="Built with Bolt.new"
-    className="inline-flex items-center space-x-2 px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 text-white opacity-90 hover:opacity-100 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md"
+    className="inline-flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full border border-purple-500/20 text-white opacity-90 hover:opacity-100 hover:scale-105 transition-all duration-300 shadow-sm hover:shadow-md"
   >
     <img
       src="/badges/black_circle_360x360.png"

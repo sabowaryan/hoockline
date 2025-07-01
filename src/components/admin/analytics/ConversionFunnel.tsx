@@ -1,7 +1,7 @@
 import React, { useState, useEffect, memo } from 'react';
 import { TrendingDown, TrendingUp, Users, CreditCard, Zap, Home } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
-import { BarChart } from '../charts/BarChart';
+import { BarChart } from '../../admin/charts/BarChart';  
 
 interface FunnelStep {
   step: string;

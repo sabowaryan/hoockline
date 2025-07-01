@@ -2,12 +2,7 @@ import React, { useState } from 'react';
 import { Mail, Lock, ArrowRight, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
-interface LoginPageProps {
-  onSwitchToSignup: () => void;
-  onLoginSuccess: () => void;
-}
-
-export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) {
+export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -168,17 +163,7 @@ export function LoginPage({ onSwitchToSignup, onLoginSuccess }: LoginPageProps) 
             </button>
           </div>
 
-          {/* Helper pour les tests - à supprimer en production */}
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={handleQuickAdminLogin}
-              className="text-xs text-purple-600 hover:text-purple-700 underline"
-              disabled={isLoading}
-            >
-              🧪 Test: Remplir identifiants admin
-            </button>
-          </div>
+          
 
           <div className="text-center">
             <p className="text-xs text-gray-500">

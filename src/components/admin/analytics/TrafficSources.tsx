@@ -1,8 +1,8 @@
 import React, { useState, useEffect, memo } from 'react';
 import { Globe, ExternalLink, TrendingUp, Users, Calendar } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
-import { DoughnutChart } from '../charts/DoughnutChart';
-import { BarChart } from '../charts/BarChart';
+import { DoughnutChart } from '../../admin/charts/DoughnutChart';
+import { BarChart } from '../../admin/charts/BarChart';
 
 interface TrafficSource {
   source: string;

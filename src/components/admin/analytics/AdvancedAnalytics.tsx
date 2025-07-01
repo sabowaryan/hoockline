@@ -10,9 +10,9 @@ import {
   Download
 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
-import { LineChart } from '../charts/LineChart';
-import { AreaChart } from '../charts/AreaChart';
-import { BarChart } from '../charts/BarChart';
+
+import { AreaChart } from '../../admin/charts/AreaChart';
+import { BarChart } from '../../admin/charts/BarChart';
 
 interface AnalyticsData {
   dailyStats: any[];

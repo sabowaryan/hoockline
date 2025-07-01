@@ -1,11 +1,10 @@
 import React from 'react';
 import { Zap, Mail, Twitter, Linkedin, Github, Heart } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { Link } from 'react-router-dom';
 import BoltBadge from './BoltBadge';
 
 export function Footer() {
-  const { navigateToHome, navigateToGenerator } = useApp();
-
+  const year = new Date().getFullYear();
   return (
     <footer className="bg-white border-t border-gray-100 mt-16">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
@@ -14,14 +13,14 @@ export function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Brand Section */}
             <div className="md:col-span-1">
-              <div className="flex items-center space-x-2 mb-4">
+              <Link to="/" className="flex items-center space-x-2 mb-4 hover:opacity-80 transition-opacity">
                 <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg">
                   <Zap className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   Clicklone
                 </span>
-              </div>
+              </Link>
               <p className="text-gray-600 text-sm leading-relaxed mb-4">
                 Le générateur IA qui transforme vos idées en phrases d'accroche percutantes. 
                 Créez des slogans irrésistibles en quelques secondes.
@@ -53,20 +52,20 @@ export function Footer() {
               <h3 className="font-semibold text-gray-900 mb-4">Produit</h3>
               <ul className="space-y-3">
                 <li>
-                  <button
-                    onClick={navigateToHome}
+                  <Link
+                    to="/"
                     className="text-gray-600 hover:text-purple-600 transition-colors text-sm"
                   >
                     Accueil
-                  </button>
+                  </Link>
                 </li>
                 <li>
-                  <button
-                    onClick={navigateToGenerator}
+                  <Link
+                    to="/generator"
                     className="text-gray-600 hover:text-purple-600 transition-colors text-sm"
                   >
                     Générateur
-                  </button>
+                  </Link>
                 </li>
                 <li>
                   <a
@@ -193,37 +192,11 @@ export function Footer() {
         <div className="border-t border-gray-100 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
             <div className="flex items-center space-x-1 text-sm text-gray-600">
-              <span>© 2024 Clicklone. Fait avec</span>
-              <Heart className="w-4 h-4 text-red-500 fill-current" />
-              <span>pour les créateurs.</span>
+              <span>© {year} Clicklone.</span>
+              <span>Tous droits réservés.</span>
             </div>
-            
-            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6">
-              <div className="flex items-center space-x-6 text-sm">
-                <a
-                  href="#status"
-                  className="text-gray-600 hover:text-purple-600 transition-colors"
-                >
-                  Statut du service
-                </a>
-                <a
-                  href="#api"
-                  className="text-gray-600 hover:text-purple-600 transition-colors"
-                >
-                  API
-                </a>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-600">Tous systèmes opérationnels</span>
-                </div>
-              </div>
-              
-              {/* Bolt Badge */}
-              <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-0.5 rounded-full">
-                <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-full">
-                  <BoltBadge />
-                </div>
-              </div>
+            <div className="flex items-center space-x-4">
+              <BoltBadge />
             </div>
           </div>
         </div>

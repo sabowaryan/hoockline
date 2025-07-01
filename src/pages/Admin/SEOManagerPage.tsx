@@ -27,7 +27,7 @@ interface SEOFormData extends Partial<SEOSettings> {
   title: string;
 }
 
-export const SEOManagerPage = memo(() => {
+export function SEOManagerPage() {
   const [seoSettings, setSeoSettings] = useState<SEOSettings[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -366,33 +366,32 @@ export const SEOManagerPage = memo(() => {
                 </div>
                 <button
                   onClick={handleCancel}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Errors */}
+              {/* Form Content */}
+              <div className="space-y-6">
+                {/* Error Messages */}
               {formErrors.length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                  <div className="flex items-center">
-                    <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-                    <div>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-2">
+                      <AlertCircle className="w-5 h-5 text-red-600" />
                       <h4 className="text-sm font-medium text-red-900">Erreurs de validation</h4>
-                      <ul className="mt-1 text-sm text-red-700 list-disc list-inside">
+                    </div>
+                    <ul className="mt-2 text-sm text-red-700 list-disc list-inside">
                         {formErrors.map((error, index) => (
                           <li key={index}>{error}</li>
                         ))}
                       </ul>
-                    </div>
-                  </div>
                 </div>
               )}
 
-              {/* Form */}
-              <div className="space-y-6 max-h-96 overflow-y-auto">
-                {/* Basic Settings */}
+                {/* Form Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Page Path */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Chemin de la page *
@@ -400,58 +399,54 @@ export const SEOManagerPage = memo(() => {
                     <input
                       type="text"
                       value={editingSettings.page_path}
-                      onChange={(e) => setEditingSettings(prev => prev ? {...prev, page_path: e.target.value} : null)}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="/example-page"
+                      onChange={(e) => setEditingSettings(prev => ({ ...prev!, page_path: e.target.value }))}
+                      placeholder="/exemple-page"
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     />
                   </div>
 
+                  {/* Priority */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Statut
+                      Priorité
                     </label>
-                    <select
-                      value={editingSettings.is_active ? 'true' : 'false'}
-                      onChange={(e) => setEditingSettings(prev => prev ? {...prev, is_active: e.target.value === 'true'} : null)}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    >
-                      <option value="true">Actif</option>
-                      <option value="false">Inactif</option>
-                    </select>
+                    <input
+                      type="number"
+                      value={editingSettings.priority || 0}
+                      onChange={(e) => setEditingSettings(prev => ({ ...prev!, priority: parseInt(e.target.value) || 0 }))}
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
                   </div>
                 </div>
 
                 {/* Title */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Titre de la page *
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Titre SEO * {getCharacterCount(editingSettings.title, 60)}
                     </label>
-                    {getCharacterCount(editingSettings.title, 60)}
-                  </div>
                   <input
                     type="text"
                     value={editingSettings.title}
-                    onChange={(e) => setEditingSettings(prev => prev ? {...prev, title: e.target.value} : null)}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    onChange={(e) => setEditingSettings(prev => ({ ...prev!, title: e.target.value }))}
                     placeholder="Titre optimisé pour le SEO"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Meta description
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description {getCharacterCount(editingSettings.description, 160)}
                     </label>
-                    {getCharacterCount(editingSettings.description, 160)}
-                  </div>
                   <textarea
                     value={editingSettings.description || ''}
-                    onChange={(e) => setEditingSettings(prev => prev ? {...prev, description: e.target.value} : null)}
+                    onChange={(e) => setEditingSettings(prev => ({ ...prev!, description: e.target.value }))}
+                    placeholder="Description de la page pour les moteurs de recherche"
                     rows={3}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Description concise et attrayante pour les moteurs de recherche"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                   />
                 </div>
 
@@ -463,63 +458,13 @@ export const SEOManagerPage = memo(() => {
                   <input
                     type="text"
                     value={editingSettings.keywords || ''}
-                    onChange={(e) => setEditingSettings(prev => prev ? {...prev, keywords: e.target.value} : null)}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    onChange={(e) => setEditingSettings(prev => ({ ...prev!, keywords: e.target.value }))}
                     placeholder="mot-clé1, mot-clé2, mot-clé3"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
                 </div>
 
-                {/* Open Graph */}
-                <div className="border-t pt-6">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">Open Graph (Réseaux sociaux)</h4>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Titre Open Graph
-                      </label>
-                      <input
-                        type="text"
-                        value={editingSettings.og_title || ''}
-                        onChange={(e) => setEditingSettings(prev => prev ? {...prev, og_title: e.target.value} : null)}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        placeholder="Titre pour les réseaux sociaux"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Description Open Graph
-                      </label>
-                      <textarea
-                        value={editingSettings.og_description || ''}
-                        onChange={(e) => setEditingSettings(prev => prev ? {...prev, og_description: e.target.value} : null)}
-                        rows={2}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        placeholder="Description pour les réseaux sociaux"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Image Open Graph (URL)
-                      </label>
-                      <input
-                        type="url"
-                        value={editingSettings.og_image || ''}
-                        onChange={(e) => setEditingSettings(prev => prev ? {...prev, og_image: e.target.value} : null)}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        placeholder="https://example.com/image.jpg"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Advanced Settings */}
-                <div className="border-t pt-6">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">Paramètres avancés</h4>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Canonical URL */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         URL canonique
@@ -527,88 +472,50 @@ export const SEOManagerPage = memo(() => {
                       <input
                         type="url"
                         value={editingSettings.canonical_url || ''}
-                        onChange={(e) => setEditingSettings(prev => prev ? {...prev, canonical_url: e.target.value} : null)}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        placeholder="https://clicklone.com/page"
+                    onChange={(e) => setEditingSettings(prev => ({ ...prev!, canonical_url: e.target.value }))}
+                    placeholder="https://example.com/page-canonique"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       />
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Robots
-                      </label>
-                      <select
-                        value={editingSettings.robots || 'index, follow'}
-                        onChange={(e) => setEditingSettings(prev => prev ? {...prev, robots: e.target.value} : null)}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      >
-                        <option value="index, follow">Index, Follow</option>
-                        <option value="noindex, follow">NoIndex, Follow</option>
-                        <option value="index, nofollow">Index, NoFollow</option>
-                        <option value="noindex, nofollow">NoIndex, NoFollow</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Type de schéma
-                      </label>
-                      <select
-                        value={editingSettings.schema_type || 'WebPage'}
-                        onChange={(e) => setEditingSettings(prev => prev ? {...prev, schema_type: e.target.value} : null)}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      >
-                        <option value="WebPage">WebPage</option>
-                        <option value="WebSite">WebSite</option>
-                        <option value="WebApplication">WebApplication</option>
-                        <option value="CheckoutPage">CheckoutPage</option>
-                        <option value="ConfirmationPage">ConfirmationPage</option>
-                        <option value="AdminPage">AdminPage</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Priorité (0-1)
-                      </label>
+                {/* Active Status */}
+                <div className="flex items-center">
                       <input
-                        type="number"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        value={editingSettings.priority || 0.5}
-                        onChange={(e) => setEditingSettings(prev => prev ? {...prev, priority: parseFloat(e.target.value)} : null)}
-                        className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
+                    type="checkbox"
+                    id="is_active"
+                    checked={editingSettings.is_active || false}
+                    onChange={(e) => setEditingSettings(prev => ({ ...prev!, is_active: e.target.checked }))}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
+                    Activer ces paramètres SEO
+                  </label>
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex space-x-3 pt-6 border-t">
+              {/* Footer */}
+              <div className="flex items-center justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
                 <button
                   onClick={handleCancel}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                  disabled={saving}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:shadow-lg hover:shadow-purple-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:shadow-lg hover:shadow-purple-500/25 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? (
-                    <div className="flex items-center justify-center">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      Sauvegarde...
-                    </div>
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Sauvegarde...</span>
+                    </>
                   ) : (
-                    <div className="flex items-center justify-center">
-                      <Save className="w-4 h-4 mr-2" />
-                      Sauvegarder
-                    </div>
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Sauvegarder</span>
+                    </>
                   )}
                 </button>
               </div>
@@ -618,6 +525,6 @@ export const SEOManagerPage = memo(() => {
       )}
     </div>
   );
-});
+}
 
 SEOManagerPage.displayName = 'SEOManagerPage';
