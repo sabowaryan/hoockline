@@ -1,5 +1,5 @@
 import React, { useState, useEffect, memo } from 'react';
-import { TrendingDown, TrendingUp, Users, CreditCard, Zap, Home, Funnel, RefreshCw, AlertCircle, ArrowDown, Target } from 'lucide-react';
+import { TrendingDown, TrendingUp, Users, CreditCard, Zap, Home, Filter, RefreshCw, AlertCircle, ArrowDown, Target, BarChart3 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { BarChart } from '../../admin/charts/BarChart';  
 
@@ -133,7 +133,7 @@ export const ConversionFunnel = memo(() => {
             <p className="text-purple-100 text-lg">Analyse du parcours utilisateur et des taux de conversion</p>
           </div>
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-            <Funnel className="w-8 h-8" />
+            <Filter className="w-8 h-8" />
           </div>
         </div>
       </div>
@@ -222,7 +222,7 @@ export const ConversionFunnel = memo(() => {
       <div className="bg-gradient-to-br from-white via-green-50 to-teal-50 rounded-2xl p-8 shadow-xl border border-white/20 backdrop-blur-sm">
         <div className="flex items-center space-x-3 mb-6">
           <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-teal-600 rounded-lg flex items-center justify-center">
-            <BarChart className="w-5 h-5 text-white" />
+            <BarChart3 className="w-5 h-5 text-white" />
           </div>
           <h4 className="text-xl font-bold text-gray-900">Visualisation du funnel</h4>
         </div>
