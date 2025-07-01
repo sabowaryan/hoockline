@@ -225,17 +225,14 @@ export function AdminDashboard() {
           <DashboardStats stats={memoizedStats} />
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Recent Orders - Takes 2 columns */}
-          <div className="xl:col-span-2">
-            <RecentOrders orders={memoizedStats.recentOrders} />
-          </div>
-          
-          {/* Quick Actions - Takes 1 column */}
-          <div className="xl:col-span-1">
-            <QuickActions />
-          </div>
+        {/* Recent Orders - Full width */}
+        <div className="w-full">
+          <RecentOrders orders={memoizedStats.recentOrders} />
+        </div>
+
+        {/* Quick Actions - Full width at bottom */}
+        <div className="w-full">
+          <QuickActions />
         </div>
 
         {/* Bottom decorative elements */}
