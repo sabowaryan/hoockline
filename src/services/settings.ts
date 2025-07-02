@@ -391,12 +391,14 @@ export async function savePendingResults(results: string): Promise<string> {
   try {
     const resultId = uuidv4();
     const expiresAt = new Date(Date.now() + 86400000); // 24h
+    const sessionId = getSessionId();
 
     const { error } = await supabase.from('pending_results').insert({
       result_id: resultId,
       content: results,
       created_at: new Date().toISOString(),
       expires_at: expiresAt.toISOString(),
+      session_id: sessionId,
     });
 
     if (error) {
@@ -440,6 +442,7 @@ export async function createPaymentToken(resultId: string, amount: number, curre
   try {
     const token = uuidv4();
     const expiresAt = new Date(Date.now() + 86400000); // 24h
+    const sessionId = getSessionId();
 
     const { error } = await supabase.from('payment_tokens').insert({
       token,
@@ -447,6 +450,7 @@ export async function createPaymentToken(resultId: string, amount: number, curre
       currency,
       expires_at: expiresAt.toISOString(),
       result_id: resultId,
+      session_id: sessionId,
     });
 
     if (error) {
@@ -586,4 +590,58 @@ export async function checkPaymentStatus(): Promise<GenerationStatus> {
       reason: 'error.payment_check_failed',
     };
   }
+}
+
+// Récupérer les résultats en attente pour la session courante via la fonction RPC
+export async function getPendingResultsForSession(sessionId?: string) {
+  const sid = sessionId || getSessionId();
+  const { data, error } = await supabase
+    .rpc('get_pending_results_for_session', { session_id_input: sid });
+  if (error) {
+    console.error('Erreur lors de la récupération des pending_results:', error);
+    return [];
+  }
+  return data;
+}
+
+// Récupérer les tokens de paiement pour la session courante via la fonction RPC
+export async function getPaymentTokensForSession(sessionId?: string) {
+  const sid = sessionId || getSessionId();
+  const { data, error } = await supabase
+    .rpc('get_payment_tokens_for_session', { session_id_input: sid });
+  if (error) {
+    console.error('Erreur lors de la récupération des payment_tokens:', error);
+    return [];
+  }
+  return data;
+}
+
+// Récupérer les sessions de génération pour la session courante via la fonction RPC
+export async function getGenerationSessionsForSession(sessionId?: string) {
+  const sid = sessionId || getSessionId();
+  const { data, error } = await supabase
+    .rpc('get_generation_sessions_for_session', { session_id_input: sid });
+  if (error) {
+    console.error('Erreur lors de la récupération des generation_sessions:', error);
+    return [];
+  }
+  return data;
+}
+
+// Récupérer un résultat spécifique par son ID de manière sécurisée
+export async function getPendingResultById(resultId: string, sessionId?: string) {
+  const sid = sessionId || getSessionId();
+  const { data, error } = await supabase
+    .rpc('get_pending_result_by_id', {
+      session_id_input: sid,
+      result_id_input: resultId
+    });
+
+  if (error) {
+    console.error('Erreur lors de la récupération du résultat:', error);
+    return null;
+  }
+
+  // La fonction RPC retourne un tableau, mais on ne veut que le premier élément
+  return data?.[0] || null;
 }

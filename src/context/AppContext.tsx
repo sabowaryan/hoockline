@@ -5,9 +5,10 @@ import { Analytics } from '../services/analytics';
 import { checkPaymentStatus as checkSettings } from '../services/settings';
 import { Format, Language } from '../types/PromptOptions';
 import { useGenerateHook } from '../hooks/useGenerateHook';
-import { supabase } from '../lib/supabase';
+
 import { markPaymentTokenAsUsed, getPaymentTokenByResultId } from '../services/settings';
 import { handleNavigationWithScroll } from '../utils/scrollUtils';
+import { getPendingResultById } from '../services/settings';
 
 interface GenerationResult {
   success: boolean;
@@ -262,15 +263,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 localStorage.setItem('payment_token', paymentToken);
               }
               
-              // Restaurer les données générées
-              const { data, error } = await supabase
-                .from('pending_results')
-                .select('content')
-                .eq('result_id', resultId)
-                .single();
+              // Restaurer les données générées de manière sécurisée
+              const result = await getPendingResultById(resultId);
               
-              if (!error && data?.content) {
-                const phrases = JSON.parse(data.content);
+              if (result?.content) {
+                const phrases = JSON.parse(result.content);
                 dispatch({ type: 'COMPLETE_GENERATION', payload: phrases });
               }
             } catch (error) {

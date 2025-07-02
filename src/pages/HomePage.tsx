@@ -684,34 +684,7 @@ export function HomePage() {
               })}
             </div>
             
-            {/* Debug Button (temporaire) */}
-            <div className="mt-8 text-center">
-              <div className="flex justify-center space-x-4">
-                <button
-                  onClick={async () => {
-                    console.log('🔍 Debug: Manual stats refresh triggered');
-                    alert('Debug: Vérifiez la console pour les logs');
-                    await debugDatabaseStats();
-                    await loadStats();
-                  }}
-                  className="bg-red-500 text-white px-6 py-3 rounded-lg text-sm hover:bg-red-600 transition-colors font-bold"
-                >
-                  🔍 Debug Stats (Console)
-                </button>
-                <button
-                  onClick={async () => {
-                    console.log('🔍 Test: Database connection test triggered');
-                    await testDatabaseConnection();
-                  }}
-                  className="bg-blue-500 text-white px-6 py-3 rounded-lg text-sm hover:bg-blue-600 transition-colors font-bold"
-                >
-                  🔗 Test Connexion DB
-                </button>
-              </div>
-              <div className="mt-2 text-xs text-gray-500">
-                Cliquez pour recharger les statistiques et voir les logs dans la console (F12)
-              </div>
-            </div>
+      
           </div>
         </div>
       </section>
