@@ -17,126 +17,126 @@ function generateSessionId(): string {
 // Enhanced page view tracking with proper headers
 export async function trackPageView(pagePath: string): Promise<void> {
   try {
-    // Don't track admin pages or if in development
-    if (pagePath.startsWith('/admin') || import.meta.env.DEV) {
-      return;
-    }
+    await withRetry(async () => {
+      // Don't track admin pages or if in development
+      if (pagePath.startsWith('/admin') || import.meta.env.DEV) {
+        return;
+      }
 
-    // Check if analytics is properly configured
-    if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-      console.warn('Analytics disabled: Supabase configuration missing');
-      return;
-    }
+      // Check if analytics is properly configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        console.warn('Analytics disabled: Supabase configuration missing');
+        return;
+      }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const referrer = document.referrer;
-    
-    // Detect traffic source
-    const trafficSource = getTrafficSource(referrer, urlParams);
-    
-    const payload = {
-      page_path: pagePath,
-      referrer: referrer || null,
-      session_id: getSessionId(),
-      traffic_source: trafficSource,
-      utm_campaign: urlParams.get('utm_campaign'),
-      utm_medium: urlParams.get('utm_medium'),
-      utm_content: urlParams.get('utm_content'),
-    };
+      const urlParams = new URLSearchParams(window.location.search);
+      const referrer = document.referrer;
+      
+      // Detect traffic source
+      const trafficSource = getTrafficSource(referrer, urlParams);
+      
+      const payload = {
+        page_path: pagePath,
+        referrer: referrer || null,
+        session_id: getSessionId(),
+        traffic_source: trafficSource,
+        utm_campaign: urlParams.get('utm_campaign'),
+        utm_medium: urlParams.get('utm_medium'),
+        utm_content: urlParams.get('utm_content'),
+      };
 
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-page-view`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify(payload),
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-page-view`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`Failed to track page view (${response.status}): ${errorText}`);
+      }
+
+      const result = await response.json().catch(() => null);
+      if (result?.session_id) {
+        sessionId = result.session_id;
+      }
     });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      console.warn(`Failed to track page view (${response.status}):`, errorText);
-      return;
-    }
-
-    const result = await response.json().catch(() => null);
-    if (result?.session_id) {
-      sessionId = result.session_id;
-    }
-
   } catch (error) {
-    console.warn('Analytics tracking error:', error);
+    console.error('Analytics tracking failed (page view):', error);
   }
 }
 
 // Track conversion events with proper authentication
+import { withRetry } from './analyticsRetry';
+
 export async function trackConversionEvent(
   eventType: 'page_view' | 'generator_start' | 'payment_start' | 'payment_complete' | 'phrase_copy' | 'error',
   pagePath?: string,
   metadata?: Record<string, any>
 ): Promise<void> {
   try {
-    if (import.meta.env.DEV || !import.meta.env.VITE_SUPABASE_URL) {
-      return;
-    }
-
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-conversion`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({
-        session_id: getSessionId(),
-        event_type: eventType,
-        page_path: pagePath,
-        metadata: metadata || null,
-      }),
+    await withRetry(async () => {
+      if (import.meta.env.DEV || !import.meta.env.VITE_SUPABASE_URL) return;
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-conversion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          session_id: getSessionId(),
+          event_type: eventType,
+          page_path: pagePath,
+          metadata: metadata || null,
+        }),
+      });
+      if (!response.ok) throw new Error(`Failed to track conversion event (${response.status})`);
     });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      console.warn(`Failed to track conversion event (${response.status}):`, errorText);
-    }
   } catch (error) {
-    console.warn('Conversion tracking error:', error);
+    console.error('Analytics tracking failed (conversion):', error);
+    // Optionnel : afficher une notification visuelle ici
   }
 }
 
-// Track time spent on page with proper authentication
+// Track time spent on page with proper authentication and retry logic
 export async function trackTimeSpent(pagePath: string, timeSpentSeconds: number): Promise<void> {
   try {
-    if (pagePath.startsWith('/admin') || import.meta.env.DEV || timeSpentSeconds < 5) {
-      return;
-    }
+    await withRetry(async () => {
+      if (pagePath.startsWith('/admin') || import.meta.env.DEV || timeSpentSeconds < 5) {
+        return;
+      }
 
-    if (!import.meta.env.VITE_SUPABASE_URL) {
-      return;
-    }
+      if (!import.meta.env.VITE_SUPABASE_URL) {
+        return;
+      }
 
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-time-spent`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-      },
-      body: JSON.stringify({
-        session_id: getSessionId(),
-        page_path: pagePath,
-        time_spent_seconds: timeSpentSeconds,
-        is_bounce: timeSpentSeconds < 30,
-      }),
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-time-spent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          session_id: getSessionId(),
+          page_path: pagePath,
+          time_spent_seconds: timeSpentSeconds,
+          is_bounce: timeSpentSeconds < 30,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`Failed to track time spent (${response.status}): ${errorText}`);
+      }
     });
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      console.warn(`Failed to track time spent (${response.status}):`, errorText);
-    }
   } catch (error) {
-    console.warn('Time tracking error:', error);
+    console.error('Analytics tracking failed (time spent):', error);
   }
 }
 

@@ -14,6 +14,7 @@ import { products, formatPrice } from '../stripe-config';
 import { StepNavigation } from '../components/StepNavigation';
 import { useTranslation } from 'react-i18next';
 import { PromptEditor } from '../components/PromptEditor';
+import { Analytics } from '../services/analytics';
 
 import { formats } from '../data/formats';
 import { tones } from '../data/tones';
@@ -51,6 +52,7 @@ export function GeneratorPage() {
   useEffect(() => {
     setAnimateIn(true);
     loadPaymentStatus();
+    Analytics.trackPageView('/generator');
   }, []);
 
   const loadPaymentStatus = async () => {

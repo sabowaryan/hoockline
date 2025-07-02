@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     }
 
     // Validate event_type
-    const validEventTypes = ['page_view', 'generator_start', 'payment_start', 'payment_complete'];
+    const validEventTypes = ['page_view', 'generator_start', 'payment_start', 'payment_complete', 'phrase_copy', 'error'];
     if (!validEventTypes.includes(event_type)) {
       return corsResponse({ error: 'Invalid event_type' }, 400);
     }

@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { getUserOrders } from '../services/stripe';
 import { products } from '../stripe-config';
 import { useTranslation } from 'react-i18next';
+import { Analytics } from '../services/analytics';
 
 export function SuccessPage() {
   const { navigateToHome, navigateToGenerator, state } = useApp();
@@ -27,6 +28,10 @@ export function SuccessPage() {
     };
 
     fetchOrderData();
+  }, []);
+
+  useEffect(() => {
+    Analytics.trackPageView('/success');
   }, []);
 
   // Redirection automatique vers results après 3 secondes

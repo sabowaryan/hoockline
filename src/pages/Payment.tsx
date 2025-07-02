@@ -20,6 +20,7 @@ import { useApp } from '../context/AppContext';
 import { createCheckoutSession } from '../services/stripe';
 import { products, formatPrice } from '../stripe-config';
 import { useTranslation } from 'react-i18next';
+import { Analytics } from '../services/analytics';
 
 
 export function Payment() {
@@ -54,6 +55,10 @@ export function Payment() {
       }
     }
   }, [state.pendingResultId]);
+
+  useEffect(() => {
+    Analytics.trackPageView('/payment');
+  }, []);
 
   const loadPaymentStatus = async () => {
     try {

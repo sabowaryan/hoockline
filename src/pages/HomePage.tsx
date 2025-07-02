@@ -29,6 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { getAppStats, AppStats } from '../services/analytic';
 import { tones } from '../data/tones';
 import { languages } from '../data/languages';
+import { Analytics } from '../services/analytics';
 
 // Interface pour le statut de paiement (cohérente avec GenerationStatus)
 interface PaymentStatus {
@@ -278,6 +279,7 @@ export function HomePage() {
     loadPaymentStatus();
     loadStats();
     clearError(); // Clear any existing errors when component mounts
+    Analytics.trackPageView('/');
     
     return () => clearTimeout(timer);
   }, [clearError]);
