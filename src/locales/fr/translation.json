@@ -440,5 +440,64 @@
     "paymentDesc": "Vous devez effectuer un paiement pour accéder à vos résultats",
     "upgrade": "Procéder au paiement",
     "loading": "Chargement..."
+  },
+  "error": {
+    "generic": {
+      "title": "Une erreur est survenue",
+      "description": "Désolé, quelque chose s'est mal passé. Veuillez réessayer.",
+      "goBack": "Retour",
+      "refresh": "Actualiser",
+      "goHome": "Accueil",
+      "searchTitle": "Essayez notre générateur",
+      "searchDescription": "Créez des phrases d'accroche percutantes avec notre IA",
+      "startGenerating": "Commencer à générer",
+      "helpfulLinks": "Liens utiles",
+      "homePage": "Page d'accueil",
+      "generator": "Générateur"
+    },
+    "404": {
+      "title": "Page introuvable",
+      "description": "La page que vous recherchez n'existe pas ou a été déplacée.",
+      "goBack": "Retour",
+      "goHome": "Accueil",
+      "searchTitle": "Essayez notre générateur",
+      "searchDescription": "Créez des phrases d'accroche percutantes avec notre IA",
+      "startGenerating": "Commencer à générer",
+      "helpfulLinks": "Liens utiles",
+      "homePage": "Page d'accueil",
+      "generator": "Générateur"
+    },
+    "500": {
+      "title": "Erreur serveur",
+      "description": "Désolé, notre serveur rencontre des difficultés. Veuillez réessayer plus tard.",
+      "refresh": "Actualiser",
+      "goHome": "Accueil",
+      "troubleshootingTitle": "Dépannage",
+      "checkConnection": "Vérifiez votre connexion internet",
+      "checkConnectionDesc": "Assurez-vous que votre connexion est stable",
+      "clearCache": "Videz le cache du navigateur",
+      "clearCacheDesc": "Appuyez sur Ctrl+F5 pour forcer le rechargement",
+      "tryLater": "Réessayez plus tard",
+      "tryLaterDesc": "Le problème peut être temporaire",
+      "tryGeneratorTitle": "Essayez notre générateur",
+      "tryGeneratorDescription": "Notre générateur pourrait fonctionner même si d'autres parties du site ont des problèmes",
+      "tryGenerator": "Tester le générateur",
+      "needHelp": "Besoin d'aide ?",
+      "homePage": "Page d'accueil",
+      "generator": "Générateur",
+      "contactSupport": "Contacter le support"
+    },
+    "403": {
+      "title": "Accès interdit",
+      "description": "Vous n'avez pas les permissions nécessaires pour accéder à cette page.",
+      "goBack": "Retour",
+      "goHome": "Accueil"
+    },
+    "401": {
+      "title": "Non autorisé",
+      "description": "Vous devez être connecté pour accéder à cette page.",
+      "goBack": "Retour",
+      "goHome": "Accueil"
+    }
   }
 } 

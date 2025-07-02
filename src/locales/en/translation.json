@@ -419,5 +419,66 @@
     "paymentDesc": "You need to complete payment to access your results",
     "upgrade": "Proceed to payment",
     "loading": "Loading..."
+  },
+  "error": {
+    "generic": {
+      "title": "An error occurred",
+      "description": "Sorry, something went wrong. Please try again.",
+      "goBack": "Go back",
+      "refresh": "Refresh",
+      "goHome": "Home",
+      "searchTitle": "Try our generator",
+      "searchDescription": "Create powerful hooklines with our AI",
+      "startGenerating": "Start generating",
+      "helpfulLinks": "Helpful links",
+      "homePage": "Home page",
+      "generator": "Generator",
+      "admin": "Admin"
+    },
+    "404": {
+      "title": "Page not found",
+      "description": "The page you're looking for doesn't exist or has been moved.",
+      "goBack": "Go back",
+      "goHome": "Home",
+      "searchTitle": "Try our generator",
+      "searchDescription": "Create powerful hooklines with our AI",
+      "startGenerating": "Start generating",
+      "helpfulLinks": "Helpful links",
+      "homePage": "Home page",
+      "generator": "Generator",
+      "admin": "Admin"
+    },
+    "500": {
+      "title": "Server error",
+      "description": "Sorry, our server is experiencing difficulties. Please try again later.",
+      "refresh": "Refresh",
+      "goHome": "Home",
+      "troubleshootingTitle": "Troubleshooting",
+      "checkConnection": "Check your internet connection",
+      "checkConnectionDesc": "Make sure your connection is stable",
+      "clearCache": "Clear browser cache",
+      "clearCacheDesc": "Press Ctrl+F5 to force reload",
+      "tryLater": "Try again later",
+      "tryLaterDesc": "The issue might be temporary",
+      "tryGeneratorTitle": "Try our generator",
+      "tryGeneratorDescription": "Our generator might work even if other parts of the site have issues",
+      "tryGenerator": "Test generator",
+      "needHelp": "Need help?",
+      "homePage": "Home page",
+      "generator": "Generator",
+      "contactSupport": "Contact support"
+    },
+    "403": {
+      "title": "Access forbidden",
+      "description": "You don't have the necessary permissions to access this page.",
+      "goBack": "Go back",
+      "goHome": "Home"
+    },
+    "401": {
+      "title": "Unauthorized",
+      "description": "You must be logged in to access this page.",
+      "goBack": "Go back",
+      "goHome": "Home"
+    }
   }
 } 

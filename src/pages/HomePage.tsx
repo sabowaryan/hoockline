@@ -26,7 +26,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { products, formatPrice } from '../stripe-config';
 import { useTranslation } from 'react-i18next';
-import { getAppStats, AppStats } from '../services/analytic';
+import { getAppStats, AppStats, debugDatabaseStats, testDatabaseConnection } from '../services/analytic';
 import { tones } from '../data/tones';
 import { languages } from '../data/languages';
 import { Analytics } from '../services/analytics';
@@ -243,21 +243,44 @@ export function HomePage() {
   // Fonction pour charger les statistiques
   const loadStats = async () => {
     try {
+      console.log('🔍 HomePage: Starting to load stats...');
+      console.log('🔍 HomePage: Environment:', import.meta.env.MODE);
+      console.log('🔍 HomePage: DEV mode:', import.meta.env.DEV);
+      
+      // Alerte pour s'assurer que les logs sont visibles
+      if (import.meta.env.DEV) {
+        console.log('🔍 HomePage: DEV mode detected - showing debug info');
+      }
+      
       setStatsLoading(true);
+      
+      // Appel de debug pour vérifier les données de la base
+      await debugDatabaseStats();
+      
       const stats = await getAppStats();
+      console.log('🔍 HomePage: Received stats from getAppStats:', stats);
+      
+      // Alerte pour montrer les statistiques reçues
+      if (import.meta.env.DEV) {
+        console.log('🔍 HomePage: Stats received:', JSON.stringify(stats, null, 2));
+      }
+      
       setAppStats(stats);
     } catch (error) {
-      console.error('Error loading stats:', error);
+      console.error('❌ HomePage: Error loading stats:', error);
       // Fallback vers des valeurs par défaut
-      setAppStats({
+      const fallbackStats = {
         totalPhrases: 0,
         uniqueUsers: 0,
         satisfactionRate: 98,
         languagesCount: 7,
         tonesCount: 6
-      });
+      };
+      console.log('🔍 HomePage: Using fallback stats:', fallbackStats);
+      setAppStats(fallbackStats);
     } finally {
       setStatsLoading(false);
+      console.log('🔍 HomePage: Stats loading completed');
     }
   };
 
@@ -345,7 +368,14 @@ export function HomePage() {
       showResults: paymentStatus.showResults,
       trialCount: paymentStatus.trialCount,
       trialLimit: paymentStatus.trialLimit,
-      reason: paymentStatus.reason
+      reason: paymentStatus.reason,
+      hasTrials: paymentStatus.trialCount !== undefined && 
+                paymentStatus.trialLimit !== undefined && 
+                paymentStatus.trialCount < paymentStatus.trialLimit,
+      accessType: paymentStatus.trialCount !== undefined && 
+                 paymentStatus.trialLimit !== undefined && 
+                 paymentStatus.trialCount < paymentStatus.trialLimit ? 'TRIAL' :
+                 (!paymentStatus.requiresPayment || paymentStatus.showResults) ? 'FREE' : 'PREMIUM'
     });
 
     // Période d'essai - Vérifier en premier
@@ -397,12 +427,12 @@ export function HomePage() {
     }
 
     // Accès gratuit ou payé (après avoir vérifié les essais)
-    // Pour les essais gratuits, requiresPayment est false et showResults est true
-    // Donc on vérifie qu'il n'y a pas de trialCount pour être sûr que c'est vraiment gratuit
+    // Vérifier s'il y a des essais gratuits disponibles
     const hasTrials = paymentStatus.trialCount !== undefined && 
                      paymentStatus.trialLimit !== undefined && 
                      paymentStatus.trialCount < paymentStatus.trialLimit;
     
+    // Accès gratuit : paiement non requis OU résultats visibles (et pas d'essais en cours)
     if ((!paymentStatus.requiresPayment || paymentStatus.showResults) && !hasTrials) {
       return (
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-3xl p-8 mb-12 text-white max-w-lg mx-auto relative overflow-hidden shadow-2xl">
@@ -485,7 +515,10 @@ export function HomePage() {
 
   // Fonction pour formater les statistiques
   const formatStats = () => {
+    console.log('🔍 HomePage: formatStats called with appStats:', appStats, 'statsLoading:', statsLoading);
+    
     if (statsLoading) {
+      console.log('🔍 HomePage: Stats are loading, showing placeholder...');
       return [
         { number: "...", label: "home.stats.phrases", icon: Sparkles },
         { number: "...", label: "home.stats.users", icon: Users },
@@ -495,6 +528,7 @@ export function HomePage() {
     }
     
     if (!appStats) {
+      console.log('🔍 HomePage: No appStats available, using fallback values...');
       return [
         { number: "0+", label: "home.stats.phrases", icon: Sparkles },
         { number: "0+", label: "home.stats.users", icon: Users },
@@ -503,7 +537,7 @@ export function HomePage() {
       ];
     }
     
-    return [
+    const formattedStats = [
       { 
         number: appStats.totalPhrases > 1000 ? `${Math.round(appStats.totalPhrases / 1000)}K+` : `${appStats.totalPhrases}+`, 
         label: "home.stats.phrases", 
@@ -525,6 +559,9 @@ export function HomePage() {
         icon: Globe 
       }
     ];
+    
+    console.log('🔍 HomePage: Formatted stats for display:', formattedStats);
+    return formattedStats;
   };
 
   // Fonction pour afficher les indicateurs de confiance
@@ -645,6 +682,35 @@ export function HomePage() {
                   </div>
                 );
               })}
+            </div>
+            
+            {/* Debug Button (temporaire) */}
+            <div className="mt-8 text-center">
+              <div className="flex justify-center space-x-4">
+                <button
+                  onClick={async () => {
+                    console.log('🔍 Debug: Manual stats refresh triggered');
+                    alert('Debug: Vérifiez la console pour les logs');
+                    await debugDatabaseStats();
+                    await loadStats();
+                  }}
+                  className="bg-red-500 text-white px-6 py-3 rounded-lg text-sm hover:bg-red-600 transition-colors font-bold"
+                >
+                  🔍 Debug Stats (Console)
+                </button>
+                <button
+                  onClick={async () => {
+                    console.log('🔍 Test: Database connection test triggered');
+                    await testDatabaseConnection();
+                  }}
+                  className="bg-blue-500 text-white px-6 py-3 rounded-lg text-sm hover:bg-blue-600 transition-colors font-bold"
+                >
+                  🔗 Test Connexion DB
+                </button>
+              </div>
+              <div className="mt-2 text-xs text-gray-500">
+                Cliquez pour recharger les statistiques et voir les logs dans la console (F12)
+              </div>
             </div>
           </div>
         </div>
