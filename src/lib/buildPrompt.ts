@@ -199,12 +199,12 @@ export function buildPrompt(options: PromptOptions): string {
     ...(forbiddenWords.length > 0 ? [`- Mots interdits (${forbiddenWords.join(', ')})`] : []),
     '- Jargon technique froid',
     '- Traductions maladroites',
-    ...(constraints.avoidAnglicisms ? ['- Anglicismes et termes non-français'] : []),
+    ...(constraints?.avoidAnglicisms ? ['- Anglicismes et termes non-français'] : []),
     '',
     '✅ TEST FINAL POUR CHAQUE PHRASE :',
     `> "Est-ce que cette phrase me donne vraiment envie d'agir (cliquer, acheter, tester), dans la culture ${language.name} ?"`,
-    ...(constraints.mustStartWithVerb ? ['> "Est-ce que ça commence bien par un verbe d\'action à l\'impératif ?"'] : []),
-    ...(constraints.requiresBenefit ? ['> "Le bénéfice client est-il clair et immédiat ?"'] : []),
+    ...(constraints?.mustStartWithVerb ? ['> "Est-ce que ça commence bien par un verbe d\'action à l\'impératif ?"'] : []),
+    ...(constraints?.requiresBenefit ? ['> "Le bénéfice client est-il clair et immédiat ?"'] : []),
     '',
     '📤 FORMAT DE SORTIE OBLIGATOIRE :',
     `Réponds UNIQUEMENT avec les 10 ${formatNameForPrompt}, en ${language.name}, un par ligne, sans numérotation, sans commentaires ni balises.`,
@@ -231,7 +231,7 @@ export function validateConcept(options: PromptOptions): { isValid: boolean; err
     warnings.push('Format "formation" peu adapté pour une startup');
   }
   
-  if (constraints.mustStartWithVerb && options.format === 'cta') {
+  if (constraints?.mustStartWithVerb && options.format === 'cta') {
     warnings.push('N\'oubliez pas: les CTA doivent commencer par un verbe d\'action');
   }
   

@@ -58,14 +58,6 @@ export function GeneratorPage() {
   const loadPaymentStatus = async () => {
     try {
       const status = await refreshPaymentStatus();
-      console.log('🔍 GeneratorPage Payment Status Debug:', {
-        canGenerate: status.canGenerate,
-        requiresPayment: status.requiresPayment,
-        showResults: status.showResults,
-        trialCount: status.trialCount,
-        trialLimit: status.trialLimit,
-        reason: status.reason
-      });
       setPaymentStatus(status);
     } catch (error) {
       console.error('Error loading payment status:', error);
@@ -86,14 +78,6 @@ export function GeneratorPage() {
 
   const renderPaymentInfo = () => {
     if (!paymentStatus) return null;
-
-    console.log('🔍 GeneratorPage Payment Status Debug:', {
-      requiresPayment: paymentStatus.requiresPayment,
-      showResults: paymentStatus.showResults,
-      trialCount: paymentStatus.trialCount,
-      trialLimit: paymentStatus.trialLimit,
-      reason: paymentStatus.reason
-    });
 
     // Période d'essai - Vérifier en premier
     if (paymentStatus.trialCount !== undefined && 

@@ -58,7 +58,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     // Vérifier le cache avec une durée plus longue
     const cached = profileCache.get(userId);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      console.log('Using cached profile for user:', userId);
+    
       setUserProfile(cached.profile);
       return;
     }
@@ -66,14 +66,14 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     // Éviter les requêtes trop fréquentes
     const now = Date.now();
     if (lastUserId.current === userId && now - (cached?.timestamp || 0) < 5000) {
-      console.log('Profile fetch too recent, using cached data');
+    
       return;
     }
 
     isFetchingProfile.current = true;
     
     try {
-      console.log('Fetching profile for user:', userId);
+      
       
       const { data, error } = await supabase
         .from('profiles')
@@ -133,8 +133,8 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
 
     const initializeAuth = async () => {
       try {
-        console.log('Initializing auth...');
-        
+          
+          
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -148,7 +148,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
           return;
         }
 
-        console.log('Session:', session?.user?.id || 'No session');
+     
 
         if (mounted) {
           setUser(session?.user ?? null);
@@ -180,7 +180,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.id);
+     
       
       if (!mounted || !initialized.current) {
         return;
@@ -190,7 +190,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
       
       // Éviter les rechargements si l'utilisateur n'a pas changé
       if (newUserId === lastUserId.current && event !== 'SIGNED_OUT') {
-        console.log('User unchanged, skipping profile reload');
+        
         return;
       }
 
@@ -216,8 +216,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         // Vérifier si la session est toujours valide sans recharger le profil
         supabase.auth.getSession().then(({ data: { session } }) => {
           if (session?.user?.id !== lastUserId.current) {
-            console.log('Session changed during visibility change, updating...');
-            setUser(session?.user ?? null);
+      setUser(session?.user ?? null);
             lastUserId.current = session?.user?.id ?? null;
             
             if (session?.user) {
@@ -281,10 +280,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
 
     return (
       <AuthContext.Provider value={authContextValue}>
-        <LoginPage
-          onSwitchToSignup={() => setAuthMode('signup')}
-          onLoginSuccess={handleAuthSuccess}
-        />
+        <LoginPage />
       </AuthContext.Provider>
     );
   }

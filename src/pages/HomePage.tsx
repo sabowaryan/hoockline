@@ -26,7 +26,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { products, formatPrice } from '../stripe-config';
 import { useTranslation } from 'react-i18next';
-import { getAppStats, AppStats, debugDatabaseStats, testDatabaseConnection } from '../services/analytic';
+import { getAppStats, AppStats,  } from '../services/analytic';
 import { tones } from '../data/tones';
 import { languages } from '../data/languages';
 import { Analytics } from '../services/analytics';
@@ -210,14 +210,7 @@ export function HomePage() {
     
     try {
       const status = await refreshPaymentStatus();
-      console.log('🔍 Payment Status Debug:', {
-        canGenerate: status.canGenerate,
-        requiresPayment: status.requiresPayment,
-        showResults: status.showResults,
-        trialCount: status.trialCount,
-        trialLimit: status.trialLimit,
-        reason: status.reason
-      });
+     
       setPaymentStatus(status);
       setPaymentError(null);
       setRetryCount(0);
@@ -243,31 +236,18 @@ export function HomePage() {
   // Fonction pour charger les statistiques
   const loadStats = async () => {
     try {
-      console.log('🔍 HomePage: Starting to load stats...');
-      console.log('🔍 HomePage: Environment:', import.meta.env.MODE);
-      console.log('🔍 HomePage: DEV mode:', import.meta.env.DEV);
       
-      // Alerte pour s'assurer que les logs sont visibles
-      if (import.meta.env.DEV) {
-        console.log('🔍 HomePage: DEV mode detected - showing debug info');
-      }
       
       setStatsLoading(true);
       
-      // Appel de debug pour vérifier les données de la base
-      await debugDatabaseStats();
+     
       
       const stats = await getAppStats();
-      console.log('🔍 HomePage: Received stats from getAppStats:', stats);
       
-      // Alerte pour montrer les statistiques reçues
-      if (import.meta.env.DEV) {
-        console.log('🔍 HomePage: Stats received:', JSON.stringify(stats, null, 2));
-      }
       
       setAppStats(stats);
     } catch (error) {
-      console.error('❌ HomePage: Error loading stats:', error);
+      
       // Fallback vers des valeurs par défaut
       const fallbackStats = {
         totalPhrases: 0,
@@ -276,11 +256,11 @@ export function HomePage() {
         languagesCount: 7,
         tonesCount: 6
       };
-      console.log('🔍 HomePage: Using fallback stats:', fallbackStats);
+     
       setAppStats(fallbackStats);
     } finally {
       setStatsLoading(false);
-      console.log('🔍 HomePage: Stats loading completed');
+      
     }
   };
 
@@ -362,21 +342,6 @@ export function HomePage() {
     }
 
     if (!paymentStatus) return null;
-
-    console.log('🔍 HomePage Payment Status Debug:', {
-      requiresPayment: paymentStatus.requiresPayment,
-      showResults: paymentStatus.showResults,
-      trialCount: paymentStatus.trialCount,
-      trialLimit: paymentStatus.trialLimit,
-      reason: paymentStatus.reason,
-      hasTrials: paymentStatus.trialCount !== undefined && 
-                paymentStatus.trialLimit !== undefined && 
-                paymentStatus.trialCount < paymentStatus.trialLimit,
-      accessType: paymentStatus.trialCount !== undefined && 
-                 paymentStatus.trialLimit !== undefined && 
-                 paymentStatus.trialCount < paymentStatus.trialLimit ? 'TRIAL' :
-                 (!paymentStatus.requiresPayment || paymentStatus.showResults) ? 'FREE' : 'PREMIUM'
-    });
 
     // Période d'essai - Vérifier en premier
     if (paymentStatus.trialCount !== undefined && 
@@ -515,10 +480,7 @@ export function HomePage() {
 
   // Fonction pour formater les statistiques
   const formatStats = () => {
-    console.log('🔍 HomePage: formatStats called with appStats:', appStats, 'statsLoading:', statsLoading);
-    
     if (statsLoading) {
-      console.log('🔍 HomePage: Stats are loading, showing placeholder...');
       return [
         { number: "...", label: "home.stats.phrases", icon: Sparkles },
         { number: "...", label: "home.stats.users", icon: Users },
@@ -528,8 +490,7 @@ export function HomePage() {
     }
     
     if (!appStats) {
-      console.log('🔍 HomePage: No appStats available, using fallback values...');
-      return [
+       return [
         { number: "0+", label: "home.stats.phrases", icon: Sparkles },
         { number: "0+", label: "home.stats.users", icon: Users },
         { number: "98%", label: "home.stats.satisfaction", icon: TrendingUp },
@@ -559,9 +520,7 @@ export function HomePage() {
         icon: Globe 
       }
     ];
-    
-    console.log('🔍 HomePage: Formatted stats for display:', formattedStats);
-    return formattedStats;
+     return formattedStats;
   };
 
   // Fonction pour afficher les indicateurs de confiance

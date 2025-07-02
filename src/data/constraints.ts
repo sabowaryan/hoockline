@@ -9,7 +9,10 @@ export const globalConstraints = {
     maxPunctuation: 2,
     avoidSuperlatives: ['très', 'plutôt', 'assez', 'vraiment'],
     forbiddenWords: ['meilleur', 'solution', 'révolutionnaire', 'innovant'],
-    requiresEmotionalTrigger: true
+    requiresEmotionalTrigger: true,
+    mustStartWithVerb: false,
+    requiresBenefit: false,
+    avoidAnglicisms: false
   };
   
   // Contraintes spécifiques par format

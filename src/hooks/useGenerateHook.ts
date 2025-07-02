@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { buildPrompt } from '../lib/buildPrompt';
-import { validateOutput, validateOutputWithSimilarity } from '../lib/validateOutput';
+import {  validateOutputWithSimilarity } from '../lib/validateOutput';
 import { llmClient } from '../services/gptClient';
 import { PromptOptions, GeneratedPhrase } from '../types/PromptOptions';
 import { 
@@ -24,6 +24,7 @@ interface PaymentStatus {
   requiresPayment: boolean;
   showResults: boolean;
   trialCount?: number;
+  trialLimit?: number;
   reason?: string;
 }
 
@@ -81,9 +82,21 @@ export function useGenerateHook() {
         resultId: id,
         results: [],
       }));
+      
+      return {
+        success: true,
+        requiresPayment: true,
+        resultId: id
+      };
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des résultats:', error);
       setError('error.save_failed');
+      
+      return {
+        success: false,
+        requiresPayment: true,
+        error: 'error.save_failed'
+      };
     }
   }, [setError]);
 
@@ -94,10 +107,10 @@ export function useGenerateHook() {
       
       // Génération des phrases
       const rawResponse = await llmClient.generate(prompt, options);
-     console.log('Réponse brute du LLM:', rawResponse);
+    
       // Validation et formatage
       const validatedResults = validateOutputWithSimilarity(rawResponse, referenceText, 10);
-      console.log('Résultats validés:', validatedResults);
+      
       return validatedResults;
     } catch (error) {
       console.error('Erreur lors de la génération:', error);
@@ -107,9 +120,15 @@ export function useGenerateHook() {
 
   const handlePostGeneration = useCallback(async (
     results: GeneratedPhrase[],
-    wasFreeTrial: boolean
+    wasFreeTrial: boolean,
+    options: PromptOptions
   ) => {
     try {
+      // Incrémenter le compteur d'essai AVANT de vérifier le statut de paiement
+      if (wasFreeTrial) {
+        await incrementTrialCount();
+      }
+
       // Vérification du statut de paiement post-génération
       const postPaymentStatus = await checkPaymentStatus();
       
@@ -119,20 +138,38 @@ export function useGenerateHook() {
         showResults: postPaymentStatus.showResults ?? false
       };
       
+      // Si l'utilisateur vient d'utiliser son dernier essai gratuit
+      if (wasFreeTrial && 
+          normalizedPaymentStatus.trialCount !== undefined && 
+          normalizedPaymentStatus.trialLimit !== undefined &&
+          normalizedPaymentStatus.trialCount >= normalizedPaymentStatus.trialLimit) {
+        // Sauvegarder les résultats et rediriger vers le paiement
+        return await handlePaymentRequired(results, {
+          ...normalizedPaymentStatus,
+          requiresPayment: true,
+          showResults: false,
+          reason: 'payment.trial_limit_reached'
+        });
+      }
+      
       // Gérer l'affichage des résultats selon le statut de paiement
       if (normalizedPaymentStatus.requiresPayment || !normalizedPaymentStatus.showResults) {
-        await handlePaymentRequired(results, normalizedPaymentStatus);
-      } else if (normalizedPaymentStatus.showResults) {
-        // Incrémenter le compteur d'essai APRÈS avoir décidé d'afficher les résultats
-        if (wasFreeTrial && normalizedPaymentStatus.trialCount !== undefined) {
-          await incrementTrialCount();
-        }
+        return await handlePaymentRequired(results, normalizedPaymentStatus);
+      } else {
         setSuccess(results);
-        return results;
+        return { 
+          success: true, 
+          requiresPayment: false, 
+          phrases: results.map(phrase => ({
+            ...phrase,
+            tone: options.tone
+          }))
+        };
       }
     } catch (error) {
       console.error('Erreur post-génération:', error);
       setError('error.post_generation');
+      return { success: false, error: 'error.post_generation' };
     }
   }, [handlePaymentRequired, setSuccess, setError]);
 
@@ -145,7 +182,7 @@ export function useGenerateHook() {
       
       if (!initialPaymentStatus.canGenerate) {
         setError('error.cannot_generate');
-        return;
+        return { success: false, error: 'error.cannot_generate' };
       }
       
       // Traitement de la génération
@@ -153,12 +190,13 @@ export function useGenerateHook() {
       
       // Gestion post-génération
       const wasFreeTrial = !initialPaymentStatus.requiresPayment;
-      return await handlePostGeneration(results, wasFreeTrial);
+      return await handlePostGeneration(results, wasFreeTrial, options);
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
       console.error('Erreur dans generate:', errorMessage);
       setError(errorMessage);
+      return { success: false, error: errorMessage };
     }
   }, [resetState, setError, processGeneration, handlePostGeneration]);
 

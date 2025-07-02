@@ -334,25 +334,26 @@ function getSessionId(): string {
 
 export async function getTrialCount(sessionId: string): Promise<number> {
   if (!sessionId) {
-    console.warn('No session ID provided for trial count check');
+
     return 0;
   }
 
   try {
+    
     const { data, error } = await supabase
-      .from('generation_sessions')
-      .select('trial_count')
-      .eq('session_id', sessionId)
-      .maybeSingle();
+      .rpc('get_trial_count', { 
+        session_id_input: sessionId 
+      });
 
     if (error) {
-      console.error('Error getting trial count:', error);
+      console.error('❌ Erreur lecture compteur:', error);
       return 0;
     }
     
-    return data?.trial_count || 0;
+    
+    return data || 0;
   } catch (error) {
-    console.error('Error getting trial count:', error);
+    console.error('❌ Erreur dans getTrialCount:', error);
     return 0;
   }
 }
@@ -360,25 +361,27 @@ export async function getTrialCount(sessionId: string): Promise<number> {
 export async function incrementTrialCount(): Promise<boolean> {
   try {
     const sessionId = getSessionId();
+
     const currentCount = await getTrialCount(sessionId);
 
-    const { error } = await supabase.from('generation_sessions').upsert(
-      {
-        session_id: sessionId,
-        trial_count: currentCount + 1,
-        last_generation: new Date().toISOString(),
-      },
-      { onConflict: 'session_id' }
-    );
+    const newCount = currentCount + 1;
+   
+
+    const { error } = await supabase
+      .rpc('increment_trial_count', { 
+        session_id_input: sessionId,
+        new_trial_count: newCount
+      });
 
     if (error) {
-      console.error('Error incrementing trial count:', error);
+      console.error('❌ Erreur incrémentation:', error);
       return false;
     }
 
+
     return true;
   } catch (error) {
-    console.error('Error in incrementTrialCount:', error);
+    console.error('❌ Erreur dans incrementTrialCount:', error);
     return false;
   }
 }
@@ -536,19 +539,10 @@ export async function checkPaymentStatus(): Promise<GenerationStatus> {
     const trialsAllowed = freeTrialsAllowed.status === 'fulfilled' ? freeTrialsAllowed.value : false;
     const maxTrials = trialLimit.status === 'fulfilled' ? trialLimit.value : 1;
 
-    console.log('🔍 Database Settings Debug:', {
-      paymentRequired: paymentRequired.status === 'fulfilled' ? paymentRequired.value : 'ERROR',
-      freeTrialsAllowed: freeTrialsAllowed.status === 'fulfilled' ? freeTrialsAllowed.value : 'ERROR',
-      trialLimit: trialLimit.status === 'fulfilled' ? trialLimit.value : 'ERROR',
-      sessionId,
-      trialCount,
-      hasValidPayment,
-      paymentToken: paymentToken ? 'EXISTS' : 'NONE'
-    });
+    
 
-    // Cas 1: Utilisateur a un paiement valide OU le paiement n'est pas requis
-    if (hasValidPayment || !paymentReq) {
-      console.log('✅ Cas 1: Accès gratuit (paiement valide ou non requis)');
+    // Cas 1: Utilisateur a un paiement valide
+    if (hasValidPayment) {
       return {
         canGenerate: true,
         requiresPayment: false,
@@ -557,9 +551,18 @@ export async function checkPaymentStatus(): Promise<GenerationStatus> {
       };
     }
 
-    // Cas 2: Essais gratuits autorisés et utilisateur n'a pas atteint la limite
+    // Cas 2: Paiement non requis
+    if (!paymentReq) {
+      return {
+        canGenerate: true,
+        requiresPayment: false,
+        showResults: true,
+        sessionId,
+      };
+    }
+
+    // Cas 3: Essais gratuits autorisés et utilisateur n'a pas atteint la limite
     if (trialsAllowed && trialCount < maxTrials) {
-      console.log('✅ Cas 2: Essais gratuits disponibles');
       return {
         canGenerate: true,
         requiresPayment: false,
@@ -570,16 +573,13 @@ export async function checkPaymentStatus(): Promise<GenerationStatus> {
       };
     }
 
-    // Cas 3: Paiement requis et utilisateur n'a pas de paiement valide
-    console.log('✅ Cas 3: Paiement requis');
+    // Cas 4: Paiement requis et utilisateur n'a pas de paiement valide
     return {
       canGenerate: true,
       requiresPayment: true,
       showResults: false,
       reason: 'payment.required',
       sessionId,
-      trialCount,
-      trialLimit: maxTrials,
     };
   } catch (error) {
     console.error('Error checking payment status:', error);

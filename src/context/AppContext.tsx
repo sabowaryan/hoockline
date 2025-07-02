@@ -14,7 +14,7 @@ interface GenerationResult {
   success: boolean;
   phrases?: GeneratedPhrase[];
   resultId?: string;
-  requiresPayment: boolean;
+  requiresPayment?: boolean;
   error?: string;
 }
 
@@ -306,6 +306,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const status = await checkSettings();
       
+      // S'assurer que les essais ne sont disponibles que si le paiement n'est pas requis
       const paymentStatus: PaymentStatus = {
         canGenerate: status.canGenerate,
         requiresPayment: status.requiresPayment,
@@ -331,8 +332,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         canGenerate: false,
         requiresPayment: true,
         reason: 'error.payment_check_failed',
-        trialCount: 0,
-        trialLimit: 0,
+        trialCount: undefined,
+        trialLimit: undefined,
         showResults: false
       };
       
@@ -353,6 +354,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const status = await checkSettings();
       
+      // S'assurer que les essais ne sont disponibles que si le paiement n'est pas requis
       const paymentStatus: PaymentStatus = {
         canGenerate: status.canGenerate,
         requiresPayment: status.requiresPayment,
@@ -378,8 +380,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         canGenerate: false,
         requiresPayment: true,
         reason: 'error.payment_check_failed',
-        trialCount: 0,
-        trialLimit: 0,
+        trialCount: undefined,
+        trialLimit: undefined,
         showResults: false
       };
       
@@ -458,8 +460,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Appel de l'API de génération
       const validatedResults = await generate(promptOptions, referenceText);
 
+
       // Gestion des erreurs de génération
       if (generateError) {
+        console.log('❌ Erreur de génération détectée');
         handleGenerationResult({
           success: false,
           requiresPayment: false,
@@ -478,25 +482,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Gestion des résultats réussis
-      if (validatedResults && validatedResults.length > 0) {
-        const phrases = validatedResults.map(phrase => ({
-          ...phrase,
-          tone: request.tone
-        }));
-        
-        handleGenerationResult({
-          success: true,
-          requiresPayment: false,
-          phrases
-        });
-      } else {
-        handleGenerationResult({
-          success: false,
-          requiresPayment: false,
-          error: 'Aucune phrase générée. Veuillez réessayer.'
-        });
+      // NOUVELLE LOGIQUE : validatedResults est maintenant un objet avec success, requiresPayment, etc.
+      if (validatedResults && typeof validatedResults === 'object' && 'success' in validatedResults) {
+        handleGenerationResult(validatedResults);
+        return;
       }
+
+      // Si on arrive ici, c'est un cas d'erreur
+      console.log('❌ Aucun résultat valide trouvé');
+      handleGenerationResult({
+        success: false,
+        requiresPayment: false,
+        error: 'Aucune phrase générée. Veuillez réessayer.'
+      });
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la génération';

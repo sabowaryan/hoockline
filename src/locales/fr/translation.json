@@ -265,7 +265,8 @@
     "perGeneration": "Paiement par génération",
     "perGenerationDesc": "Chaque génération nécessite un nouveau paiement pour garantir la qualité et la fraîcheur du contenu.",
     "perGeneration": "Paiement par génération",
-    "perGenerationDesc": "Chaque génération nécessite un nouveau paiement pour garantir la qualité et la fraîcheur du contenu."
+    "perGenerationDesc": "Chaque génération nécessite un nouveau paiement pour garantir la qualité et la fraîcheur du contenu.",
+    "trial_limit_reached": "Vous avez atteint la limite d'essais gratuits"
   },
   "success": {
     "loading": "Chargement de votre commande...",

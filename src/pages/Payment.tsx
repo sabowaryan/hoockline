@@ -63,14 +63,7 @@ export function Payment() {
   const loadPaymentStatus = async () => {
     try {
       const status = await refreshPaymentStatus();
-      console.log('🔍 PaymentPage Payment Status Debug:', {
-        canGenerate: status.canGenerate,
-        requiresPayment: status.requiresPayment,
-        showResults: status.showResults,
-        trialCount: status.trialCount,
-        trialLimit: status.trialLimit,
-        reason: status.reason
-      });
+      
       setPaymentStatus(status);
     } catch (error) {
       console.error('Error loading payment status:', error);
@@ -94,8 +87,7 @@ export function Payment() {
         : `${currentUrl}?success=true`;
       const cancelUrl = `${currentUrl}?canceled=true`;
 
-      console.log('🔍 PaymentPage: Utilisation du pendingResultId:', pendingResultId);
-
+     
       const { url } = await createCheckoutSession({
         priceId: product.priceId,
         mode: product.mode,
@@ -128,14 +120,6 @@ export function Payment() {
                      paymentStatus.trialLimit !== undefined && 
                      paymentStatus.trialCount < paymentStatus.trialLimit;
     
-    console.log('🔍 PaymentPage canAccessResults Debug:', {
-      hasTrials,
-      trialCount: paymentStatus.trialCount,
-      trialLimit: paymentStatus.trialLimit,
-      requiresPayment: paymentStatus.requiresPayment,
-      canGenerate: paymentStatus.canGenerate,
-      showResults: paymentStatus.showResults
-    });
     
     // Si l'utilisateur a des essais gratuits, il peut accéder aux résultats
     if (hasTrials) return true;

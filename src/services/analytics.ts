@@ -23,11 +23,6 @@ export async function trackPageView(pagePath: string): Promise<void> {
         return;
       }
 
-      // Check if analytics is properly configured
-      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-        console.warn('Analytics disabled: Supabase configuration missing');
-        return;
-      }
 
       const urlParams = new URLSearchParams(window.location.search);
       const referrer = document.referrer;

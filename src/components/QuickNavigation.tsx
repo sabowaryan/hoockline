@@ -37,15 +37,7 @@ export function QuickNavigation() {
   const loadPaymentStatus = async () => {
     try {
       const status = await refreshPaymentStatus();
-      console.log('🔍 QuickNavigation Payment Status Debug:', {
-        canGenerate: status.canGenerate,
-        requiresPayment: status.requiresPayment,
-        showResults: status.showResults,
-        trialCount: status.trialCount,
-        trialLimit: status.trialLimit,
-        reason: status.reason,
-        pendingResultId: state.pendingResultId
-      });
+      
       setPaymentStatus(status);
     } catch (error) {
       console.error('Error loading payment status:', error);
@@ -63,14 +55,7 @@ export function QuickNavigation() {
                      paymentStatus.trialLimit !== undefined && 
                      paymentStatus.trialCount < paymentStatus.trialLimit;
     
-    console.log('🔍 QuickNavigation canAccessResults Debug:', {
-      hasTrials,
-      trialCount: paymentStatus.trialCount,
-      trialLimit: paymentStatus.trialLimit,
-      requiresPayment: paymentStatus.requiresPayment,
-      canGenerate: paymentStatus.canGenerate,
-      showResults: paymentStatus.showResults
-    });
+   
     
     // Si l'utilisateur a des essais gratuits, il peut accéder aux résultats
     if (hasTrials) return true;
