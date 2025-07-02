@@ -16,6 +16,15 @@
     "traffic": "Traffic"
   },
   "home": {
+    "freeAccess": "Free access unlocked!",
+    "freeDescription": "You have access to all features for free",
+    "startNow": "Start now",
+    "trialTitle": "Free trial available",
+    "trialDescription": "You have {{count}} trials left out of {{limit}} available",
+    "startTrial": "Start trial",
+    "premiumTitle": "Premium access required",
+    "premiumDescription": "Unlock all features with premium access",
+    "startPremium": "Get premium access",
     "hero": {
       "title": "Create compelling hooklines with AI",
       "subtitle": "Generate 10 unique and impactful phrases in seconds",
@@ -30,11 +39,11 @@
         "description": "Cutting-edge technology for creative and impactful phrases"
       },
       "tones": {
-        "title": "6 personalized tones",
+        "title": " personalized tones",
         "description": "Humorous, inspiring, direct, mysterious, luxurious, technological"
       },
       "languages": {
-        "title": "6 native languages",
+        "title": " native languages",
         "description": "French, English, Spanish, German, Italian, Portuguese"
       },
       "instant": {
@@ -78,6 +87,8 @@
       "button": "Start now"
     },
     "stats": {
+      "title": "Numbers that speak",
+      "subtitle": "Discover the impact of Clicklone on content creation",
       "phrases": "Phrases generated",
       "users": "Satisfied users",
       "satisfaction": "Satisfaction rate",
@@ -102,52 +113,83 @@
       "instantAccess": "Instant access",
       "advancedAI": "Advanced AI",
       "noSubscription": "No subscription"
-    }
+    },
+    "loading": "Loading..."
   },
   "generator": {
-    "title": "AI Generator",
-    "description": "Create your personalized hooklines with artificial intelligence",
+    "title": "Hook Generator",
+    "description": "Create powerful hooks for your marketing content",
     "form": {
       "concept": "Your concept or product",
-      "conceptDescription": "Describe what you want to promote",
-      "conceptPlaceholder": "E.g.: Meditation app, Delivery service, Freelancing platform...",
-      "conceptHelp": "Describe your concept in a few words so the AI can create tailored phrases",
-      "tone": "Choose your tone",
-      "toneDescription": "Select the mood of your phrases",
-      "language": "Generation language",
-      "languageDescription": "Choose the language of your phrases",
-      "generate": "Generate my hooklines",
+      "conceptDescription": "Describe your product, service, or idea in a few words",
+      "conceptHelp": "The more precise your description, the better the results",
+      "conceptPlaceholder": "Ex: A guided meditation app",
+      "format": "Format",
+      "formatDescription": "Choose the type of hook you need",
+      "tone": "Tone",
+      "toneDescription": "Choose the style that best matches your brand",
+      "language": "Language",
+      "languageDescription": "Select the language for your hooks",
+      "platform": "Platform",
+      "generate": "Generate hooks",
       "generating": "Generating...",
-      "freeTitle": "Free generation",
-      "freeDescription": "You can generate your hooklines for free",
+      "freeTitle": "Unlimited generation",
+      "freeDescription": "You have access to unlimited hook generation",
+      "trialTitle": "Free trial",
+      "trialCount": "Trial {{count}}/{{limit}} - Make it count!",
+      "paymentRequired": "Limited access",
+      "paymentDescription": "Unlock unlimited generation for {{price}}",
+      "formats": {
+        "tagline": "Startup Tagline",
+        "formation": "Course Title",
+        "app_store": "App Store Description",
+        "hero_banner": "Hero Banner",
+        "cta": "Call-to-Action (CTA)",
+        "slogan": "Advertising Slogan",
+        "ad_copy": "Short Ad Copy",
+        "tweet": "Startup Tweet",
+        "email": "B2B Email Intro",
+        "onboarding": "Onboarding Message",
+        "faq": "FAQ / Objections"
+      },
+      "formatsDesc": {
+        "tagline": "Short, impactful slogan that summarizes your mission",
+        "formation": "Catchy title that promises transformation",
+        "app_store": "Optimized description for app stores",
+        "hero_banner": "Main headline for your website",
+        "cta": "Converting action button",
+        "slogan": "Memorable advertising hook",
+        "ad_copy": "Persuasive ad text",
+        "tweet": "Authentic and engaging tweet",
+        "email": "Ice-breaking intro line",
+        "onboarding": "Guiding welcome message",
+        "faq": "Clear answer to objections"
+      },
       "tones": {
         "humoristique": "Humorous",
         "inspirant": "Inspiring",
-        "direct": "Direct and Brief",
+        "direct": "Direct",
         "mysterieux": "Mysterious",
         "luxueux": "Luxurious",
-        "techy": "Technological"
+        "techy": "Tech"
       },
       "tonesDesc": {
-        "humoristique": "Funny and quirky",
-        "inspirant": "Motivating and positive",
-        "direct": "Efficient and impactful",
-        "mysterieux": "Intriguing and curious",
-        "luxueux": "Elegant and premium",
-        "techy": "Innovative and modern"
+        "humoristique": "Light and fun tone that makes people smile",
+        "inspirant": "Motivating tone that drives action",
+        "direct": "Straightforward and efficient tone",
+        "mysterieux": "Intriguing tone that sparks curiosity",
+        "luxueux": "Refined tone that evokes excellence",
+        "techy": "Innovative tone for tech enthusiasts"
       },
       "languages": {
         "fr": "French",
-        "en": "English",
+        "en-US": "English (US)",
+        "en-GB": "English (UK)",
         "es": "Spanish",
         "de": "German",
-        "it": "Italian",
-        "pt": "Portuguese"
-      },
-      "trialTitle": "Free trial available",
-      "trialCount": "{{count}}/{{limit}} free trials",
-      "paymentRequired": "Payment required to view results",
-      "paymentDescription": "Generate your lines now, then pay {{price}} to unlock them"
+        "ar": "Arabic",
+        "pt-BR": "Portuguese (BR)"
+      }
     },
     "results": {
       "title": "Your generated hooklines",
@@ -157,7 +199,9 @@
       "share": "Share"
     },
     "payment": {
-      "proceed": "Proceed to payment"
+      "proceed": "Proceed to payment",
+      "success": "Payment successful",
+      "error": "Payment error"
     }
   },
   "payment": {
@@ -196,7 +240,11 @@
       "2": "6 different tones available",
       "3": "6 supported languages"
     },
-    "productDescription": "Pack of 10 personalized AI-generated hooklines"
+    "productDescription": "Pack of 10 personalized AI-generated hooklines",
+    "required": "Payment required",
+    "proceed": "Proceed to payment",
+    "perGeneration": "Payment per generation",
+    "perGenerationDesc": "Each generation requires a new payment to ensure quality and freshness of content."
   },
   "success": {
     "loading": "Loading your order...",
@@ -226,6 +274,9 @@
     "ctaDesc": "Use these lines for your titles, slogans or posts. Come back anytime to generate new hooks in other languages!",
     "generateMore": "Generate more lines",
     "backHome": "Back to home",
+    "redirecting": "Automatic redirection...",
+    "redirectDesc": "You will be redirected to your results in",
+    "viewResults": "View results",
     "testimonial": {
       "text": "Clicklone saved me hours of brainstorming! The generated lines are perfect for my campaigns.",
       "author": "- Sarah M., Marketing Manager"
@@ -271,7 +322,8 @@
     "success": "Success",
     "error": "Error",
     "warning": "Warning",
-    "info": "Information"
+    "info": "Information",
+    "copied": "Copied to clipboard!"
   },
   "footer": {
     "slogan1": "The AI generator that turns your ideas into powerful hooklines.",
@@ -313,7 +365,8 @@
     "notAvailable": "Not available",
     "noGenerated": "No lines generated",
     "unauthorized": "Unauthorized access",
-    "unavailablePages": "Unavailable pages"
+    "unavailablePages": "Unavailable pages",
+    "paymentPerGeneration": "Payment per generation"
   },
   "stepnav": {
     "title": "Progress",
@@ -331,7 +384,8 @@
     "freeTrialsAvailable": "Free trials available",
     "notAvailable": "Not available",
     "noGenerated": "No lines generated",
-    "unauthorized": "Unauthorized access"
+    "unauthorized": "Unauthorized access",
+    "paymentPerGeneration": "Payment per generation"
   },
   "breadcrumb": {
     "home": "Home",
@@ -346,18 +400,24 @@
     "seo": "SEO"
   },
   "results": {
-    "emptyTitle": "No lines generated",
-    "emptyDesc": "Start by generating your personalized hooklines",
-    "startGeneration": "Start generating",
-    "readyTitle": "Your hooklines are ready!",
+    "emptyTitle": "No hooks generated",
+    "emptyDesc": "Start by generating hooks for your concept",
+    "startGeneration": "Start generation",
+    "readyTitle": "Your hooks are ready!",
     "personalizedPhrases": "Here are your",
-    "for": "personalized lines for",
-    "tone": "Tone",
-    "copied": "Copied!",
+    "for": "hooks for",
+    "tone": "Tone:",
+    "language": "Language:",
+    "ctaTitle": "Want to create more hooks?",
+    "ctaDesc": "Generate new versions or try different tones and formats",
+    "generateMore": "Generate more hooks",
+    "backHome": "Back to home",
     "copy": "Copy",
-    "ctaTitle": "Ready to conquer the world! 🚀",
-    "ctaDesc": "Use these lines for your titles, slogans or posts. Come back anytime to generate new hooks in other languages!",
-    "generateMore": "Generate more lines",
-    "backHome": "Back to home"
+    "copied": "Copied!",
+    "download": "Download",
+    "paymentRequired": "Payment required",
+    "paymentDesc": "You need to complete payment to access your results",
+    "upgrade": "Proceed to payment",
+    "loading": "Loading..."
   }
 } 

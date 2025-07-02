@@ -39,7 +39,7 @@ export function SettingsPage() {
     free_trials_allowed: false,
     trial_limit: 1,
     payment_amount: 399,
-    payment_currency: 'EUR'
+    payment_currency: 'USD'
   });
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({
     site_name: 'Clicklone',

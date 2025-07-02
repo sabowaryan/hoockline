@@ -19,13 +19,37 @@ import {
   Laugh,
   Users,
   TrendingUp,
-  Award
+  Award,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { products, formatPrice } from '../stripe-config';
-import { isPaymentRequired, areFreeTrialsAllowed, getTrialLimit } from '../services/settings';
 import { useTranslation } from 'react-i18next';
+import { getAppStats, AppStats } from '../services/analytic';
+import { tones } from '../data/tones';
+import { languages } from '../data/languages';
 
+// Interface pour le statut de paiement (cohérente avec GenerationStatus)
+interface PaymentStatus {
+  canGenerate: boolean;
+  requiresPayment: boolean;
+  reason?: string;
+  trialCount?: number;
+  trialLimit?: number;
+  showResults: boolean;
+}
+
+// Interface pour les features
+interface Feature {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  color: string;
+  badge: ((appStats: AppStats | null) => string) | string | null;
+}
+
+// Exemples d'utilisation
 const examples = [
   {
     concept: "home.examples.meditation.concept",
@@ -57,46 +81,53 @@ const examples = [
   }
 ];
 
-const features = [
+// Fonction pour générer les features dynamiquement
+const getFeatures = (appStats: AppStats | null): Feature[] => [
   {
     icon: Brain,
     title: "home.features.ai.title",
     description: "home.features.ai.description",
-    color: "from-purple-500 to-pink-600"
+    color: "from-purple-500 to-pink-600",
+    badge: null
   },
   {
     icon: Target,
     title: "home.features.tones.title",
     description: "home.features.tones.description",
-    color: "from-pink-500 to-rose-600"
+    color: "from-pink-500 to-rose-600",
+    badge: (appStats: AppStats | null) => appStats ? `${appStats.tonesCount}` : `${tones.length}`
   },
   {
     icon: Globe,
     title: "home.features.languages.title",
     description: "home.features.languages.description",
-    color: "from-blue-500 to-cyan-600"
+    color: "from-blue-500 to-cyan-600",
+    badge: (appStats: AppStats | null) => appStats ? `${appStats.languagesCount}` : `${languages.length}`
   },
   {
     icon: Zap,
     title: "home.features.instant.title",
     description: "home.features.instant.description",
-    color: "from-indigo-500 to-purple-600"
+    color: "from-indigo-500 to-purple-600",
+    badge: null
   },
   {
     icon: Shield,
     title: "home.features.secure.title",
     description: "home.features.secure.description",
-    color: "from-green-500 to-emerald-600"
+    color: "from-green-500 to-emerald-600",
+    badge: null
   },
   {
     icon: Clock,
     title: "home.features.access.title",
     description: "home.features.access.description",
-    color: "from-orange-500 to-amber-600"
+    color: "from-orange-500 to-amber-600",
+    badge: null
   }
 ];
 
-// Témoignages mockés multilingues
+// Témoignages multilingues
 const testimonialsMock = {
   fr: [
     {
@@ -116,7 +147,7 @@ const testimonialsMock = {
     {
       name: "Marie D.",
       role: "Freelance Copywriter",
-      content: "Un outil indispensable pour débloquer ma créativité. Les 6 tons disponibles couvrent tous mes besoins.",
+      content: `Un outil indispensable pour débloquer ma créativité. Les ${tones.length} tons disponibles couvrent tous mes besoins.`,
       rating: 5,
       avatar: "MD"
     }
@@ -139,63 +170,122 @@ const testimonialsMock = {
     {
       name: "Marie D.",
       role: "Freelance Copywriter",
-      content: "An essential tool to unlock my creativity. The 6 available tones cover all my needs.",
+      content: `An essential tool to unlock my creativity. The ${tones.length} available tones cover all my needs.`,
       rating: 5,
       avatar: "MD"
     }
   ]
 };
 
-const stats = [
-  { number: "10K+", label: "home.stats.phrases", icon: Sparkles },
-  { number: "2K+", label: "home.stats.users", icon: Users },
-  { number: "98%", label: "home.stats.satisfaction", icon: TrendingUp },
-  { number: "6", label: "home.stats.languages", icon: Globe }
-];
+
 
 export function HomePage() {
-  const { navigateToGenerator } = useApp();
-  const [paymentSettings, setPaymentSettings] = useState({
-    paymentRequired: true,
-    freeTrialsAllowed: false,
-    trialLimit: 1
-  });
-  const [loading, setLoading] = useState(true);
+  // Hooks et état
+  const { navigateToGenerator, refreshPaymentStatus, isLoading: contextLoading, clearError } = useApp();
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(true);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [animateIn, setAnimateIn] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [appStats, setAppStats] = useState<AppStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  
   const { t, i18n } = useTranslation();
   const lang = (i18n.language === 'fr' || i18n.language === 'en') ? i18n.language : 'en';
-  const testimonials: Array<{ name: string; role: string; content: string; rating: number; avatar: string }> = testimonialsMock[lang];
+  const testimonials = testimonialsMock[lang];
+  
+  // État de loading combiné
+  const isLoading = contextLoading || paymentLoading || statsLoading;
+  
+  // Produit pour le pricing
+  const product = products[0]; // Hookline product
 
-  useEffect(() => {
-    setAnimateIn(true);
-    loadPaymentSettings();
-  }, []);
-
-  const loadPaymentSettings = async () => {
+  // Chargement du statut de paiement avec retry
+  const loadPaymentStatus = async (isRetry = false) => {
+    if (!isRetry) {
+      setPaymentLoading(true);
+      setPaymentError(null);
+    }
+    
     try {
-      const [paymentRequired, freeTrialsAllowed, trialLimit] = await Promise.all([
-        isPaymentRequired(),
-        areFreeTrialsAllowed(),
-        getTrialLimit()
-      ]);
-      
-      setPaymentSettings({
-        paymentRequired,
-        freeTrialsAllowed,
-        trialLimit
+      const status = await refreshPaymentStatus();
+      console.log('🔍 Payment Status Debug:', {
+        canGenerate: status.canGenerate,
+        requiresPayment: status.requiresPayment,
+        showResults: status.showResults,
+        trialCount: status.trialCount,
+        trialLimit: status.trialLimit,
+        reason: status.reason
       });
+      setPaymentStatus(status);
+      setPaymentError(null);
+      setRetryCount(0);
     } catch (error) {
-      console.error('Error loading payment settings:', error);
+      console.error('Error loading payment status:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      setPaymentError(errorMessage);
+      
+      // Fallback vers un état restrictif par défaut
+      setPaymentStatus({
+        canGenerate: false,
+        requiresPayment: true,
+        reason: 'error.payment_check_failed',
+        trialCount: 0,
+        trialLimit: 3,
+        showResults: false
+      });
     } finally {
-      setLoading(false);
+      setPaymentLoading(false);
     }
   };
 
-  const product = products[0]; // Hookline product
+  // Fonction pour charger les statistiques
+  const loadStats = async () => {
+    try {
+      setStatsLoading(true);
+      const stats = await getAppStats();
+      setAppStats(stats);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+      // Fallback vers des valeurs par défaut
+      setAppStats({
+        totalPhrases: 0,
+        uniqueUsers: 0,
+        satisfactionRate: 98,
+        languagesCount: 7,
+        tonesCount: 6
+      });
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
-  // Fonction pour afficher conditionnellement les informations de paiement
+  // Fonction de retry
+  const handleRetry = () => {
+    if (retryCount < 3) {
+      setRetryCount(prev => prev + 1);
+      loadPaymentStatus(true);
+    }
+  };
+
+  // Effets
+  useEffect(() => {
+    // Délai réduit pour éviter les conflits de défilement
+    const timer = setTimeout(() => {
+      setAnimateIn(true);
+    }, 50);
+    
+    loadPaymentStatus();
+    loadStats();
+    clearError(); // Clear any existing errors when component mounts
+    
+    return () => clearTimeout(timer);
+  }, [clearError]);
+
+  // Fonction pour afficher les informations de paiement
   const renderPaymentInfo = () => {
-    if (loading) {
+    // État de chargement
+    if (isLoading) {
       return (
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 mb-12 text-white max-w-lg mx-auto relative overflow-hidden shadow-2xl">
           <div className="animate-pulse">
@@ -208,39 +298,60 @@ export function HomePage() {
       );
     }
 
-    if (!paymentSettings.paymentRequired) {
+    // État d'erreur avec retry
+    if (paymentError && (!paymentStatus || retryCount > 0)) {
       return (
-        <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-3xl p-8 mb-12 text-white max-w-lg mx-auto relative overflow-hidden shadow-2xl">
+        <div className="bg-gradient-to-r from-red-500 to-rose-600 rounded-3xl p-8 mb-12 text-white max-w-lg mx-auto relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-bl-3xl text-sm font-bold">
-            {t('home.payment.free')}
+            {t('home.error.title')}
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-white" />
+                <AlertCircle className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold">{t('home.payment.freeTitle')}</span>
+              <span className="text-xl font-bold">{t('home.error.title')}</span>
             </div>
-            <div className="text-5xl font-bold mb-4">0€</div>
-            <div className="text-green-100 text-lg mb-6">
-              {t('home.payment.freeDescription')}
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-sm text-green-200">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4" />
-                <span>{t('home.payment.unlimited')}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4" />
-                <span>{t('home.features.instant.title')}</span>
-              </div>
-            </div>
+            <div className="text-red-100 text-lg mb-6">{t('home.error.paymentCheck')}</div>
+            {retryCount < 3 && (
+              <button
+                onClick={handleRetry}
+                className="bg-white text-red-600 px-8 py-4 rounded-xl font-semibold hover:bg-red-50 transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-3"
+              >
+                <RefreshCw className="w-5 h-5" />
+                <span>{t('home.error.retry')}</span>
+              </button>
+            )}
+            {retryCount >= 3 && (
+              <button
+                onClick={navigateToGenerator}
+                className="bg-white text-red-600 px-8 py-4 rounded-xl font-semibold hover:bg-red-50 transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-3"
+              >
+                <ArrowRight className="w-5 h-5" />
+                <span>{t('home.error.continue')}</span>
+              </button>
+            )}
           </div>
         </div>
       );
     }
 
-    if (paymentSettings.freeTrialsAllowed) {
+    if (!paymentStatus) return null;
+
+    console.log('🔍 HomePage Payment Status Debug:', {
+      requiresPayment: paymentStatus.requiresPayment,
+      showResults: paymentStatus.showResults,
+      trialCount: paymentStatus.trialCount,
+      trialLimit: paymentStatus.trialLimit,
+      reason: paymentStatus.reason
+    });
+
+    // Période d'essai - Vérifier en premier
+    if (paymentStatus.trialCount !== undefined && 
+        paymentStatus.trialLimit !== undefined && 
+        paymentStatus.trialCount < paymentStatus.trialLimit) {
+      const remainingTrials = paymentStatus.trialLimit - paymentStatus.trialCount;
+      
       return (
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 mb-12 text-white max-w-lg mx-auto relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 bg-yellow-400 text-purple-900 px-4 py-2 rounded-bl-3xl text-sm font-bold">
@@ -251,28 +362,86 @@ export function HomePage() {
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                 <Star className="w-6 h-6 text-yellow-300 fill-current" />
               </div>
-              <span className="text-xl font-bold">{t('home.payment.trialTitle')}</span>
+              <span className="text-xl font-bold">{t('home.trialTitle')}</span>
             </div>
             <div className="text-5xl font-bold mb-4">{formatPrice(product.price)}</div>
             <div className="text-purple-100 text-lg mb-6">
-              {t('home.payment.trialDescription')}
+              {t('home.trialDescription', { 
+                count: remainingTrials, 
+                limit: paymentStatus.trialLimit 
+              })}
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm text-purple-200">
+            <div className="grid grid-cols-2 gap-4 text-sm text-purple-200 mb-6">
               <div className="flex items-center space-x-2">
                 <CheckCircle className="w-4 h-4" />
-                <span>{paymentSettings.trialLimit} {t('home.payment.trialCount')}</span>
+                <span>{paymentStatus.trialLimit} {t('home.payment.trialCount')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <CheckCircle className="w-4 h-4" />
                 <span>{t('home.trust.instantAccess')}</span>
               </div>
             </div>
+            <button
+              onClick={navigateToGenerator}
+              className="bg-white text-purple-600 px-8 py-4 rounded-xl font-semibold hover:bg-purple-50 transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-3"
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>{t('home.startTrial')}</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
       );
     }
 
-    // Paiement requis sans essais gratuits
+    // Accès gratuit ou payé (après avoir vérifié les essais)
+    // Pour les essais gratuits, requiresPayment est false et showResults est true
+    // Donc on vérifie qu'il n'y a pas de trialCount pour être sûr que c'est vraiment gratuit
+    const hasTrials = paymentStatus.trialCount !== undefined && 
+                     paymentStatus.trialLimit !== undefined && 
+                     paymentStatus.trialCount < paymentStatus.trialLimit;
+    
+    if ((!paymentStatus.requiresPayment || paymentStatus.showResults) && !hasTrials) {
+      return (
+        <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-3xl p-8 mb-12 text-white max-w-lg mx-auto relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-bl-3xl text-sm font-bold">
+            {t('home.payment.free')}
+          </div>
+          <div className="text-center">
+            <div className="flex items-center justify-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-xl font-bold">{t('home.freeAccess')}</span>
+            </div>
+            <div className="text-5xl font-bold mb-4">0 USD</div>
+            <div className="text-green-100 text-lg mb-6">
+              {t('home.freeDescription')}
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm text-green-200 mb-6">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4" />
+                <span>{t('home.payment.unlimited')}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4" />
+                <span>{t('home.features.instant.title')}</span>
+              </div>
+            </div>
+            <button
+              onClick={navigateToGenerator}
+              className="bg-white text-green-600 px-8 py-4 rounded-xl font-semibold hover:bg-green-50 transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-3"
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>{t('home.startNow')}</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Accès premium requis
     return (
       <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-8 mb-12 text-white max-w-lg mx-auto relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 bg-yellow-400 text-purple-900 px-4 py-2 rounded-bl-3xl text-sm font-bold">
@@ -283,13 +452,13 @@ export function HomePage() {
             <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
               <Award className="w-6 h-6 text-yellow-300" />
             </div>
-            <span className="text-xl font-bold">{t('home.payment.premiumTitle')}</span>
+            <span className="text-xl font-bold">{t('home.premiumTitle')}</span>
           </div>
           <div className="text-5xl font-bold mb-4">{formatPrice(product.price)}</div>
           <div className="text-purple-100 text-lg mb-6">
-            {t('home.payment.premiumDescription')}
+            {t('home.premiumDescription')}
           </div>
-          <div className="grid grid-cols-2 gap-4 text-sm text-purple-200">
+          <div className="grid grid-cols-2 gap-4 text-sm text-purple-200 mb-6">
             <div className="flex items-center space-x-2">
               <CheckCircle className="w-4 h-4" />
               <span>{t('home.payment.oneTime')}</span>
@@ -299,18 +468,90 @@ export function HomePage() {
               <span>{t('home.trust.instantAccess')}</span>
             </div>
           </div>
+          <button
+            onClick={navigateToGenerator}
+            className="bg-white text-purple-600 px-8 py-4 rounded-xl font-semibold hover:bg-purple-50 transition-all transform hover:scale-105 shadow-lg inline-flex items-center space-x-3"
+          >
+            <CreditCard className="w-5 h-5" />
+            <span>{t('home.startPremium')}</span>
+            <ArrowRight className="w-5 h-5" />
+          </button>
         </div>
       </div>
     );
   };
 
-  // Fonction pour afficher conditionnellement les indicateurs de confiance
+  // Fonction pour formater les statistiques
+  const formatStats = () => {
+    if (statsLoading) {
+      return [
+        { number: "...", label: "home.stats.phrases", icon: Sparkles },
+        { number: "...", label: "home.stats.users", icon: Users },
+        { number: "...", label: "home.stats.satisfaction", icon: TrendingUp },
+        { number: "...", label: "home.stats.languages", icon: Globe }
+      ];
+    }
+    
+    if (!appStats) {
+      return [
+        { number: "0+", label: "home.stats.phrases", icon: Sparkles },
+        { number: "0+", label: "home.stats.users", icon: Users },
+        { number: "98%", label: "home.stats.satisfaction", icon: TrendingUp },
+        { number: "7", label: "home.stats.languages", icon: Globe }
+      ];
+    }
+    
+    return [
+      { 
+        number: appStats.totalPhrases > 1000 ? `${Math.round(appStats.totalPhrases / 1000)}K+` : `${appStats.totalPhrases}+`, 
+        label: "home.stats.phrases", 
+        icon: Sparkles 
+      },
+      { 
+        number: appStats.uniqueUsers > 1000 ? `${Math.round(appStats.uniqueUsers / 1000)}K+` : `${appStats.uniqueUsers}+`, 
+        label: "home.stats.users", 
+        icon: Users 
+      },
+      { 
+        number: `${appStats.satisfactionRate}%`, 
+        label: "home.stats.satisfaction", 
+        icon: TrendingUp 
+      },
+      { 
+        number: `${appStats.languagesCount}`, 
+        label: "home.stats.languages", 
+        icon: Globe 
+      }
+    ];
+  };
+
+  // Fonction pour afficher les indicateurs de confiance
   const renderTrustIndicators = () => {
     const indicators = [
-      { icon: Shield, text: t('home.trust.securePayment'), color: 'text-green-500', show: true },
-      { icon: Clock, text: t('home.trust.instantAccess'), color: 'text-blue-500', show: true },
-      { icon: Brain, text: t('home.trust.advancedAI'), color: 'text-purple-500', show: true },
-      { icon: CreditCard, text: t('home.trust.noSubscription'), color: 'text-orange-500', show: !paymentSettings.paymentRequired || paymentSettings.freeTrialsAllowed }
+      { 
+        icon: Shield, 
+        text: t('home.trust.securePayment'), 
+        color: 'text-green-500', 
+        show: true 
+      },
+      { 
+        icon: Clock, 
+        text: t('home.trust.instantAccess'), 
+        color: 'text-blue-500', 
+        show: true 
+      },
+      { 
+        icon: Brain, 
+        text: t('home.trust.advancedAI'), 
+        color: 'text-purple-500', 
+        show: true 
+      },
+      { 
+        icon: CreditCard, 
+        text: t('home.trust.noSubscription'), 
+        color: 'text-orange-500', 
+        show: !paymentStatus?.requiresPayment || paymentStatus?.showResults 
+      }
     ];
 
     return (
@@ -328,11 +569,20 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
       {/* Hero Section */}
-      <section className="py-16 sm:py-20 lg:py-24">
-        <div className="text-center max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative py-20 sm:py-24 lg:py-32 overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-white to-pink-50"></div>
+        <div className="absolute top-0 left-1/4 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+        <div className="absolute top-0 right-1/4 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={`transition-all duration-1000 ${animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <div className="flex justify-center mb-6">
-              <div className="flex items-center space-x-3 bg-gradient-to-r from-purple-100 to-pink-100 px-6 py-3 rounded-full border border-purple-200">
+            
+            {/* Badge */}
+            <div className="flex justify-center mb-8">
+              <div className="inline-flex items-center space-x-3 bg-white/80 backdrop-blur-sm px-6 py-3 rounded-full border border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse"></div>
                 <Sparkles className="w-5 h-5 text-purple-600" />
                 <span className="text-sm font-semibold text-purple-700">
                   {t('home.hero.subtitle')}
@@ -340,50 +590,60 @@ export function HomePage() {
               </div>
             </div>
             
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-              {t('home.hero.title')}
-              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent block">
-                {t('home.hero.cta')}
-              </span>
-            </h1>
-            
-            <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-              {t('home.hero.description')}
-            </p>
+            {/* Main Heading */}
+            <div className="text-center mb-12">
+              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-gray-900 mb-6 leading-tight tracking-tight">
+                {t('home.hero.title')}
+                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 bg-clip-text text-transparent block mt-2">
+                  {t('home.hero.cta')}
+                </span>
+              </h1>
+              
+              <p className="text-xl sm:text-2xl md:text-3xl text-gray-600 max-w-4xl mx-auto leading-relaxed font-medium">
+                {t('home.hero.description')}
+              </p>
+            </div>
 
-            {/* Enhanced Pricing highlight */}
-            {renderPaymentInfo()}
+            {/* Payment Info Card */}
+            <div className="mb-12">
+              {renderPaymentInfo()}
+            </div>
 
-            <button
-              onClick={navigateToGenerator}
-              className="group inline-flex items-center space-x-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-2xl text-lg font-bold hover:shadow-2xl hover:shadow-purple-500/25 transition-all duration-300 transform hover:scale-105"
-            >
-              <span>{t('home.hero.cta')}</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
-            </button>
+            {/* Trust Indicators */}
+            <div className="mb-16">
+              {renderTrustIndicators()}
+            </div>
 
-            {/* Enhanced trust indicators */}
-            {renderTrustIndicators()}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 bg-white/50 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => {
-              const IconComponent = stat.icon;
-              return (
-                <div key={index} className={`text-center transition-all duration-1000 ${animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ animationDelay: `${index * 200}ms` }}>
-                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <IconComponent className="w-8 h-8 text-white" />
+            {/* Quick Stats Preview */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+              {formatStats().map((stat, index) => {
+                const IconComponent = stat.icon;
+                const isLoading = statsLoading && stat.number === "...";
+                
+                return (
+                  <div 
+                    key={index} 
+                    className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-md">
+                      <IconComponent className="w-6 h-6 text-white" />
+                    </div>
+                    <div className={`text-2xl font-bold text-gray-900 mb-1 ${isLoading ? 'animate-pulse' : ''}`}>
+                      {isLoading ? (
+                        <div className="flex items-center justify-center">
+                          <div className="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                          <span>...</span>
+                        </div>
+                      ) : (
+                        stat.number
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-600 font-medium">{t(stat.label)}</div>
                   </div>
-                  <div className="text-3xl font-bold text-gray-900 mb-2">{stat.number}</div>
-                  <div className="text-gray-600 font-medium">{t(stat.label)}</div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
@@ -447,14 +707,20 @@ export function HomePage() {
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
+            {getFeatures(appStats).map((feature, index) => (
               <div
                 key={index}
                 className={`bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-500 transform hover:scale-105 ${animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
                 style={{ animationDelay: `${800 + index * 100}ms` }}
               >
-                <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center mb-6 shadow-lg`}>
+                <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center mb-6 shadow-lg relative`}>
                   <feature.icon className="w-8 h-8 text-white" />
+                  {/* Badge pour les tons et langues */}
+                  {feature.badge && (
+                    <div className="absolute -top-2 -right-2 bg-white text-purple-600 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-lg border-2 border-purple-200">
+                      {typeof feature.badge === 'function' ? feature.badge(appStats) : feature.badge}
+                    </div>
+                  )}
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
                   {t(feature.title)}
@@ -481,7 +747,7 @@ export function HomePage() {
           </div>
 
           <div className="grid sm:grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial: typeof testimonials[0], index: number) => (
+            {testimonials.map((testimonial, index) => (
               <div
                 key={index}
                 className={`bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-500 transform hover:scale-105 ${animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}

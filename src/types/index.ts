@@ -1,16 +1,8 @@
-export type Tone = 'humoristique' | 'inspirant' | 'direct' | 'mysterieux' | 'luxueux' | 'techy';
+import type { PromptOptions, Tone, GeneratedPhrase as BaseGeneratedPhrase } from './PromptOptions';
 
-export interface GenerationRequest {
-  concept: string;
-  tone: Tone;
-  language: string;
-}
+export type GenerationRequest = Omit<PromptOptions, 'format'>;
 
-export interface GeneratedPhrase {
-  id: string;
-  text: string;
-  tone: Tone;
-}
+export type GeneratedPhrase = BaseGeneratedPhrase & { tone: Tone };
 
 export interface AppState {
   currentStep: 'home' | 'generator' | 'payment' | 'results' | 'success';
@@ -19,4 +11,15 @@ export interface AppState {
   isGenerating: boolean;
   isPaymentComplete: boolean;
   error: string | null;
+  pendingResultId: string | null;
+}
+
+// Interface centralisée pour le statut de paiement
+export interface PaymentStatus {
+  canGenerate: boolean;
+  requiresPayment: boolean;
+  reason?: string;
+  trialCount?: number;
+  trialLimit?: number;
+  showResults: boolean;
 }

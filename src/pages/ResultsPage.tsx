@@ -1,27 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, CheckCircle, Home, RefreshCw, Globe, Sparkles, Zap, ArrowRight, Star } from 'lucide-react';
+import { CheckCircle, Home, RefreshCw, Globe, Sparkles, Zap, ArrowRight, Star, CreditCard } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useTranslation } from 'react-i18next';
-
-const languageNames: Record<string, string> = {
-  'fr': 'Français',
-  'en': 'English',
-  'es': 'Español',
-  'de': 'Deutsch',
-  'it': 'Italiano',
-  'pt': 'Português'
-};
+import { PromptResult } from '../components/PromptResult';
+import { savePendingResults, createPaymentToken } from '../services/settings';
+import { useNavigate } from 'react-router-dom';
 
 export function ResultsPage() {
-  const { state, navigateToHome, copyPhrase } = useApp();
+  const { state, navigateToHome, navigateToGenerator, copyPhrase, refreshPaymentStatus } = useApp();
   const [copiedPhrases, setCopiedPhrases] = useState<Set<string>>(new Set());
   const [animateIn, setAnimateIn] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<{
+    canGenerate: boolean;
+    requiresPayment: boolean;
+    showResults: boolean;
+    trialCount?: number;
+    trialLimit?: number;
+    reason?: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Animation d'entrée
     setAnimateIn(true);
+    loadPaymentStatus();
   }, []);
+
+  const loadPaymentStatus = async () => {
+    try {
+      const status = await refreshPaymentStatus();
+      console.log('🔍 ResultsPage Payment Status Debug:', {
+        canGenerate: status.canGenerate,
+        requiresPayment: status.requiresPayment,
+        showResults: status.showResults,
+        trialCount: status.trialCount,
+        trialLimit: status.trialLimit,
+        reason: status.reason
+      });
+      setPaymentStatus(status);
+    } catch (error) {
+      console.error('Error loading payment status:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCopy = async (phrase: string, phraseId: string) => {
     await copyPhrase(phrase);
@@ -37,6 +60,31 @@ export function ResultsPage() {
     }, 2000);
   };
 
+  const handleProceedToPayment = async () => {
+    try {
+      // Sauvegarder les phrases générées existantes
+      const resultId = await savePendingResults(JSON.stringify(state.generatedPhrases));
+      
+      // Créer un token de paiement pour cette génération
+      const paymentAmount = 399; // 3.99 EUR en centimes
+      const paymentToken = await createPaymentToken(resultId, paymentAmount, 'EUR');
+      
+      // Stocker le token de paiement dans localStorage
+      localStorage.setItem('payment_token', paymentToken);
+      
+      // Stocker le resultId dans sessionStorage pour la page de paiement
+      sessionStorage.setItem('pending_result_id', resultId);
+      
+      // Rediriger vers la page de paiement
+      navigate('/payment');
+    } catch (error) {
+      console.error('Erreur lors de la préparation du paiement:', error);
+      // En cas d'erreur, rediriger vers la page d'accueil
+      navigateToHome();
+    }
+  };
+
+  // Si on n'a pas de phrases générées, rediriger vers la page d'accueil
   if (!state.generatedPhrases.length) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-pink-50">
@@ -53,6 +101,69 @@ export function ResultsPage() {
             <span className="flex items-center space-x-2">
               <Zap className="w-5 h-5" />
               <span>{t('results.startGeneration')}</span>
+            </span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Si on charge le statut de paiement
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-pink-50">
+        <div className="text-center p-8">
+          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">{t('results.loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Vérifier si l'utilisateur peut accéder aux résultats
+  const canAccessResults = () => {
+    if (!paymentStatus) return false;
+    
+    // Vérifier d'abord s'il y a des essais gratuits disponibles
+    const hasTrials = paymentStatus.trialCount !== undefined && 
+                     paymentStatus.trialLimit !== undefined && 
+                     paymentStatus.trialCount < paymentStatus.trialLimit;
+    
+    console.log('🔍 ResultsPage canAccessResults Debug:', {
+      hasTrials,
+      trialCount: paymentStatus.trialCount,
+      trialLimit: paymentStatus.trialLimit,
+      requiresPayment: paymentStatus.requiresPayment,
+      canGenerate: paymentStatus.canGenerate,
+      showResults: paymentStatus.showResults
+    });
+    
+    // Si l'utilisateur a des essais gratuits, il peut accéder aux résultats
+    if (hasTrials) return true;
+    
+    // Sinon, vérifier l'accès gratuit normal
+    if (!paymentStatus.requiresPayment) return true;
+    
+    return paymentStatus.canGenerate && paymentStatus.showResults;
+  };
+
+  // Si l'utilisateur n'a pas accès aux résultats
+  if (!canAccessResults()) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-pink-50">
+        <div className="text-center p-8 max-w-lg">
+          <div className="w-20 h-20 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Star className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('results.paymentRequired')}</h2>
+          <p className="text-gray-600 mb-6">{t('results.paymentDesc')}</p>
+          <button
+            onClick={handleProceedToPayment}
+            className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-8 py-4 rounded-xl font-semibold hover:shadow-lg hover:shadow-orange-500/25 transition-all transform hover:scale-105"
+          >
+            <span className="flex items-center space-x-2">
+              <CreditCard className="w-5 h-5" />
+              <span>{t('results.upgrade')}</span>
             </span>
           </button>
         </div>
@@ -97,65 +208,31 @@ export function ResultsPage() {
               <div className="flex items-center space-x-2 bg-pink-100 px-4 py-2 rounded-full">
                 <Globe className="w-4 h-4 text-pink-600" />
                 <span className="font-medium">
-                  {t(`generator.form.languages.${state.generationRequest?.language}`) || state.generationRequest?.language}
+                  {t(`generator.form.languages.${state.generationRequest?.targetLanguage}`) || state.generationRequest?.targetLanguage}
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Generated Phrases avec animations */}
-        <div className="space-y-4 sm:space-y-6 mb-12">
-          {state.generatedPhrases.map((phrase, index) => (
-            <div
-              key={phrase.id}
-              className={`bg-white/90 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-lg border border-white/20 hover:shadow-xl transition-all duration-500 transform hover:scale-[1.02] ${
-                animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="flex items-start justify-between space-x-4 sm:space-x-6">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-md">
-                      #{index + 1}
-                    </div>
-                    <div className="flex space-x-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-4 h-4 ${i < 3 ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
-                      ))}
-                    </div>
-                  </div>
-                  <blockquote className="text-lg sm:text-xl font-semibold text-gray-900 leading-relaxed break-words relative">
-                    <span className="absolute -left-2 top-0 text-4xl text-purple-200">"</span>
-                    <span className="pl-4">{phrase.text}</span>
-                    <span className="absolute -right-2 bottom-0 text-4xl text-purple-200">"</span>
-                  </blockquote>
-                </div>
-                <button
-                  onClick={() => handleCopy(phrase.text, phrase.id)}
-                  className={`flex items-center space-x-2 px-4 py-3 rounded-xl transition-all duration-300 flex-shrink-0 transform hover:scale-105 ${
-                    copiedPhrases.has(phrase.id)
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg'
-                      : 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 hover:from-purple-200 hover:to-pink-200'
-                  }`}
-                >
-                  {copiedPhrases.has(phrase.id) ? (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      <span className="font-semibold">{t('results.copied')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-5 h-5" />
-                      <span className="font-semibold">{t('results.copy')}</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* Generated Phrases avec PromptResult */}
+        <PromptResult
+          results={state.generatedPhrases}
+          onCopy={handleCopy}
+          copiedPhrases={copiedPhrases}
+          onDownload={() => {
+            const content = state.generatedPhrases.map(r => r.text).join('\n');
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `accroches-${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }}
+        />
 
         {/* Final Message & CTA amélioré */}
         <div className={`bg-gradient-to-r from-purple-600 via-pink-600 to-purple-700 rounded-3xl p-8 sm:p-12 text-center text-white shadow-2xl border border-purple-500/20 transition-all duration-1000 ${
@@ -180,7 +257,7 @@ export function ResultsPage() {
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
-                  onClick={navigateToHome}
+                  onClick={navigateToGenerator}
                   className="group inline-flex items-center justify-center space-x-3 bg-white text-purple-600 px-6 py-4 rounded-xl font-semibold hover:bg-purple-50 transition-all transform hover:scale-105 shadow-lg"
                 >
                   <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />

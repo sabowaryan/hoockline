@@ -4,11 +4,8 @@ let sessionId: string | null = null;
 // Generate a session ID for this browser session
 function getSessionId(): string {
   if (!sessionId) {
-    sessionId = localStorage.getItem('clicklone_session_id');
-    if (!sessionId) {
-      sessionId = generateSessionId();
-      localStorage.setItem('clicklone_session_id', sessionId);
-    }
+    // Use memory storage instead of localStorage
+    sessionId = generateSessionId();
   }
   return sessionId;
 }
@@ -60,27 +57,22 @@ export async function trackPageView(pagePath: string): Promise<void> {
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
       console.warn(`Failed to track page view (${response.status}):`, errorText);
-      
-      // Don't throw error to avoid breaking the app
       return;
     }
 
     const result = await response.json().catch(() => null);
     if (result?.session_id) {
-      // Update session ID if server provided a new one
       sessionId = result.session_id;
-      localStorage.setItem('clicklone_session_id', sessionId);
     }
 
   } catch (error) {
     console.warn('Analytics tracking error:', error);
-    // Don't throw error to avoid breaking the app
   }
 }
 
 // Track conversion events with proper authentication
 export async function trackConversionEvent(
-  eventType: 'page_view' | 'generator_start' | 'payment_start' | 'payment_complete',
+  eventType: 'page_view' | 'generator_start' | 'payment_start' | 'payment_complete' | 'phrase_copy' | 'error',
   pagePath?: string,
   metadata?: Record<string, any>
 ): Promise<void> {
@@ -162,23 +154,33 @@ function getTrafficSource(referrer: string, utm: URLSearchParams): string {
     const referrerDomain = new URL(referrer).hostname.toLowerCase();
     
     // Search engines
-    if (referrerDomain.includes('google')) return 'google';
-    if (referrerDomain.includes('bing')) return 'bing';
-    if (referrerDomain.includes('yahoo')) return 'yahoo';
-    if (referrerDomain.includes('duckduckgo')) return 'duckduckgo';
+    const searchEngines = ['google', 'bing', 'yahoo', 'duckduckgo', 'baidu', 'yandex'];
+    for (const engine of searchEngines) {
+      if (referrerDomain.includes(engine)) return engine;
+    }
     
     // Social media
-    if (referrerDomain.includes('facebook')) return 'facebook';
-    if (referrerDomain.includes('twitter') || referrerDomain.includes('t.co')) return 'twitter';
-    if (referrerDomain.includes('linkedin')) return 'linkedin';
-    if (referrerDomain.includes('instagram')) return 'instagram';
-    if (referrerDomain.includes('youtube')) return 'youtube';
-    if (referrerDomain.includes('tiktok')) return 'tiktok';
+    const socialPlatforms = [
+      'facebook', 'twitter', 't.co', 'linkedin', 'instagram', 
+      'youtube', 'tiktok', 'pinterest', 'snapchat', 'discord'
+    ];
+    for (const platform of socialPlatforms) {
+      if (referrerDomain.includes(platform)) {
+        return platform === 't.co' ? 'twitter' : platform;
+      }
+    }
     
-    // Other known sources
-    if (referrerDomain.includes('github')) return 'github';
-    if (referrerDomain.includes('reddit')) return 'reddit';
-    if (referrerDomain.includes('medium')) return 'medium';
+    // Developer/Tech platforms
+    const techPlatforms = ['github', 'stackoverflow', 'dev.to', 'hashnode'];
+    for (const platform of techPlatforms) {
+      if (referrerDomain.includes(platform)) return platform;
+    }
+    
+    // Content platforms
+    const contentPlatforms = ['reddit', 'medium', 'substack', 'hackernews'];
+    for (const platform of contentPlatforms) {
+      if (referrerDomain.includes(platform)) return platform;
+    }
     
     // Default to referral for other domains
     return 'referral';
@@ -193,35 +195,35 @@ export class TimeTracker {
   private isActive: boolean = true;
   private totalTime: number = 0;
   private pagePath: string;
+  private visibilityHandler: () => void;
+  private beforeUnloadHandler: () => void;
 
   constructor(pagePath: string) {
     this.pagePath = pagePath;
-    this.setupVisibilityTracking();
-    this.setupBeforeUnload();
+    this.visibilityHandler = this.handleVisibilityChange.bind(this);
+    this.beforeUnloadHandler = this.sendTimeSpent.bind(this);
+    this.setupEventListeners();
   }
 
-  private setupVisibilityTracking() {
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        // Page became hidden, pause timer
-        if (this.isActive) {
-          this.totalTime += Date.now() - this.startTime;
-          this.isActive = false;
-        }
-      } else {
-        // Page became visible, resume timer
-        if (!this.isActive) {
-          this.startTime = Date.now();
-          this.isActive = true;
-        }
+  private setupEventListeners() {
+    document.addEventListener('visibilitychange', this.visibilityHandler);
+    window.addEventListener('beforeunload', this.beforeUnloadHandler);
+  }
+
+  private handleVisibilityChange() {
+    if (document.hidden) {
+      // Page became hidden, pause timer
+      if (this.isActive) {
+        this.totalTime += Date.now() - this.startTime;
+        this.isActive = false;
       }
-    });
-  }
-
-  private setupBeforeUnload() {
-    window.addEventListener('beforeunload', () => {
-      this.sendTimeSpent();
-    });
+    } else {
+      // Page became visible, resume timer
+      if (!this.isActive) {
+        this.startTime = Date.now();
+        this.isActive = true;
+      }
+    }
   }
 
   private sendTimeSpent() {
@@ -237,6 +239,8 @@ export class TimeTracker {
 
   public destroy() {
     this.sendTimeSpent();
+    document.removeEventListener('visibilitychange', this.visibilityHandler);
+    window.removeEventListener('beforeunload', this.beforeUnloadHandler);
   }
 }
 
@@ -261,39 +265,48 @@ export function trackPageViewDebounced(pagePath: string): void {
   }, 100);
 }
 
-// Enhanced tracking for specific user actions
-export const Analytics = {
-  // Track when user starts using the generator
-  trackGeneratorStart: (concept: string, tone: string, language: string) => {
-    trackConversionEvent('generator_start', '/generator', {
-      concept,
-      tone,
-      language,
-      timestamp: new Date().toISOString()
-    });
-  },
+// Track when a user copies a phrase
+export async function trackPhraseCopy(phrase: string): Promise<void> {
+  try {
+    if (import.meta.env.DEV) return;
+    await trackConversionEvent('phrase_copy', undefined, { phrase });
+  } catch (error) {
+    console.warn('Error tracking phrase copy:', error);
+  }
+}
 
-  // Track when user initiates payment
-  trackPaymentStart: (productId: string, amount: number) => {
-    trackConversionEvent('payment_start', '/payment', {
-      product_id: productId,
-      amount,
-      timestamp: new Date().toISOString()
-    });
-  },
+// Track errors for debugging and monitoring
+export async function trackError(errorType: string, message: string, details?: string): Promise<void> {
+  try {
+    if (import.meta.env.DEV) return;
+    await trackConversionEvent('error', undefined, { errorType, message, details });
+  } catch (error) {
+    console.warn('Error tracking error event:', error);
+  }
+}
 
-  // Track successful payment completion
-  trackPaymentComplete: (orderId: string, amount: number) => {
-    trackConversionEvent('payment_complete', '/success', {
-      order_id: orderId,
-      amount,
-      timestamp: new Date().toISOString()
-    });
-  },
+// Interface for the Analytics object
+interface AnalyticsInterface {
+  trackGeneratorStart: (concept: string, tone: string, language: string) => Promise<void>;
+  trackPaymentStart: (productId: string, amount: number) => Promise<void>;
+  trackPaymentComplete: (orderId: string, amount: number) => Promise<void>;
+  trackPageView: (pagePath: string) => Promise<void>;
+  createTimeTracker: (pagePath: string) => TimeTracker;
+  trackPhraseCopy: (phrase: string) => Promise<void>;
+  trackError: (errorType: string, message: string, details?: string) => Promise<void>;
+}
 
-  // Track page views with enhanced data
-  trackPageView: trackPageViewDebounced,
-
-  // Create time tracker for a page
+// Export analytics interface
+export const Analytics: AnalyticsInterface = {
+  trackGeneratorStart: (concept: string, tone: string, language: string) => 
+    trackConversionEvent('generator_start', undefined, { concept, tone, language }),
+  trackPaymentStart: (productId: string, amount: number) => 
+    trackConversionEvent('payment_start', undefined, { productId, amount }),
+  trackPaymentComplete: (orderId: string, amount: number) => 
+    trackConversionEvent('payment_complete', undefined, { orderId, amount }),
+  trackPageView,
   createTimeTracker: (pagePath: string) => new TimeTracker(pagePath),
+  trackPhraseCopy,
+  trackError
 };
+

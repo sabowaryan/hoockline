@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Home, Wand2, CreditCard, CheckCircle, ArrowRight, Lock } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { isPaymentRequired, areFreeTrialsAllowed, getTrialLimit } from '../services/settings';
 import { useTranslation } from 'react-i18next';
 
 interface QuickNavItem {
@@ -19,35 +18,37 @@ interface QuickNavItem {
 
 export function QuickNavigation() {
   const location = useLocation();
-  const { state } = useApp();
+  const { state, refreshPaymentStatus } = useApp();
   const currentPath = location.pathname;
-  const [paymentSettings, setPaymentSettings] = useState({
-    paymentRequired: true,
-    freeTrialsAllowed: false,
-    trialLimit: 1
-  });
+  const [paymentStatus, setPaymentStatus] = useState<{
+    canGenerate: boolean;
+    requiresPayment: boolean;
+    trialCount?: number;
+    trialLimit?: number;
+    showResults: boolean;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
 
   useEffect(() => {
-    loadPaymentSettings();
+    loadPaymentStatus();
   }, []);
 
-  const loadPaymentSettings = async () => {
+  const loadPaymentStatus = async () => {
     try {
-      const [paymentRequired, freeTrialsAllowed, trialLimit] = await Promise.all([
-        isPaymentRequired(),
-        areFreeTrialsAllowed(),
-        getTrialLimit()
-      ]);
-      
-      setPaymentSettings({
-        paymentRequired,
-        freeTrialsAllowed,
-        trialLimit
+      const status = await refreshPaymentStatus();
+      console.log('🔍 QuickNavigation Payment Status Debug:', {
+        canGenerate: status.canGenerate,
+        requiresPayment: status.requiresPayment,
+        showResults: status.showResults,
+        trialCount: status.trialCount,
+        trialLimit: status.trialLimit,
+        reason: status.reason,
+        pendingResultId: state.pendingResultId
       });
+      setPaymentStatus(status);
     } catch (error) {
-      console.error('Error loading payment settings:', error);
+      console.error('Error loading payment status:', error);
     } finally {
       setLoading(false);
     }
@@ -55,29 +56,47 @@ export function QuickNavigation() {
 
   // Vérifier si l'utilisateur peut accéder aux résultats
   const canAccessResults = () => {
-    if (!paymentSettings.paymentRequired) return true;
+    if (!paymentStatus) return false;
     
-    const hasPaid = localStorage.getItem('payment_completed') === 'true';
-    if (hasPaid) return true;
+    // Vérifier d'abord s'il y a des essais gratuits disponibles
+    const hasTrials = paymentStatus.trialCount !== undefined && 
+                     paymentStatus.trialLimit !== undefined && 
+                     paymentStatus.trialCount < paymentStatus.trialLimit;
     
-    if (paymentSettings.freeTrialsAllowed) {
-      const trialCount = parseInt(localStorage.getItem('trial_count') || '0');
-      return trialCount > 0;
-    }
+    console.log('🔍 QuickNavigation canAccessResults Debug:', {
+      hasTrials,
+      trialCount: paymentStatus.trialCount,
+      trialLimit: paymentStatus.trialLimit,
+      requiresPayment: paymentStatus.requiresPayment,
+      canGenerate: paymentStatus.canGenerate,
+      showResults: paymentStatus.showResults
+    });
     
-    return false;
+    // Si l'utilisateur a des essais gratuits, il peut accéder aux résultats
+    if (hasTrials) return true;
+    
+    // Sinon, vérifier l'accès gratuit normal
+    if (!paymentStatus.requiresPayment) return true;
+    
+    return paymentStatus.canGenerate && paymentStatus.showResults;
   };
 
   // Vérifier si l'utilisateur peut accéder au paiement
   const canAccessPayment = () => {
-    if (!paymentSettings.paymentRequired) return false;
+    if (!paymentStatus) return false;
     
-    const hasPaid = localStorage.getItem('payment_completed') === 'true';
-    if (hasPaid) return false;
+    // Si l'utilisateur a un pendingResultId, il peut toujours accéder au paiement
+    if (state.pendingResultId) return true;
     
-    if (paymentSettings.freeTrialsAllowed) {
-      const trialCount = parseInt(localStorage.getItem('trial_count') || '0');
-      return trialCount >= paymentSettings.trialLimit;
+    // Si le paiement n'est pas requis, pas d'accès au paiement
+    if (!paymentStatus.requiresPayment) return false;
+    
+    // Si l'utilisateur a déjà accès aux résultats ET des phrases générées, pas besoin de paiement
+    if (paymentStatus.canGenerate && paymentStatus.showResults && state.generatedPhrases.length > 0) return false;
+    
+    // L'utilisateur peut accéder au paiement s'il a épuisé ses essais gratuits
+    if (paymentStatus.trialCount !== undefined && paymentStatus.trialLimit !== undefined) {
+      return paymentStatus.trialCount >= paymentStatus.trialLimit;
     }
     
     return true;
@@ -106,11 +125,14 @@ export function QuickNavigation() {
       color: 'from-green-500 to-green-600',
       requiresPayment: true,
       disabled: !canAccessPayment(),
-      disabledReason: !paymentSettings.paymentRequired 
+      disabledReason: state.pendingResultId
+        ? t('quicknav.notAvailable')
+        : !paymentStatus?.requiresPayment 
         ? t('quicknav.paymentNotRequired')
-        : localStorage.getItem('payment_completed') === 'true'
+        : paymentStatus?.canGenerate && paymentStatus?.showResults && state.generatedPhrases.length > 0
         ? t('quicknav.paymentAlreadyDone')
-        : paymentSettings.freeTrialsAllowed && parseInt(localStorage.getItem('trial_count') || '0') < paymentSettings.trialLimit
+        : paymentStatus?.trialCount !== undefined && paymentStatus?.trialLimit !== undefined && 
+          paymentStatus.trialCount < paymentStatus.trialLimit
         ? t('quicknav.freeTrialsAvailable')
         : t('quicknav.notAvailable')
     },

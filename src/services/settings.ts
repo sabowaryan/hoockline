@@ -1,4 +1,6 @@
+// services/settings.ts
 import { supabase } from '../lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface SystemSetting {
   id: string;
@@ -24,16 +26,129 @@ export interface GeneralSettings {
   site_description: string;
 }
 
-// Cache pour éviter les requêtes répétées
-const settingsCache = new Map<string, any>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+export interface GenerationStatus {
+  canGenerate: boolean;
+  requiresPayment: boolean;
+  reason?: string;
+  sessionId?: string;
+  trialCount?: number;
+  trialLimit?: number;
+  showResults?: boolean;
+}
 
-// Obtenir un paramètre système
-export async function getSystemSetting(key: string): Promise<any> {
-  // Vérifier le cache
-  const cached = settingsCache.get(key);
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return cached.value;
+// Types pour la validation
+type SettingKey = 'payment_required' | 'free_trials_allowed' | 'trial_limit' | 'payment_amount' | 'payment_currency' | 'site_name' | 'site_description';
+
+// Cache thread-safe avec Map
+class SettingsCache {
+  private cache = new Map<string, { value: any; timestamp: number }>();
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  get<T = unknown>(key: string): T | null {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      return cached.value as T;
+    }
+    return null;
+  }
+
+  set(key: string, value: any): void {
+    this.cache.set(key, {
+      value,
+      timestamp: Date.now(),
+    });
+  }
+
+  delete(key: string): void {
+    this.cache.delete(key);
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+const settingsCache = new SettingsCache();
+
+// Utilitaires pour localStorage sécurisé
+class SafeStorage {
+  private isAvailable: boolean;
+
+  constructor() {
+    this.isAvailable = this.checkAvailability();
+  }
+
+  private checkAvailability(): boolean {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return false;
+      }
+      const test = '__storage_test__';
+      localStorage.setItem(test, test);
+      localStorage.removeItem(test);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  getItem(key: string): string | null {
+    if (!this.isAvailable) return null;
+    try {
+      return localStorage.getItem(key);
+    } catch (error) {
+      console.warn(`Error reading from localStorage (${key}):`, error);
+      return null;
+    }
+  }
+
+  setItem(key: string, value: string): boolean {
+    if (!this.isAvailable) return false;
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (error) {
+      console.warn(`Error writing to localStorage (${key}):`, error);
+      return false;
+    }
+  }
+
+  removeItem(key: string): boolean {
+    if (!this.isAvailable) return false;
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch (error) {
+      console.warn(`Error removing from localStorage (${key}):`, error);
+      return false;
+    }
+  }
+}
+
+const safeStorage = new SafeStorage();
+
+// Validation des paramètres
+const settingValidators: Record<string, (value: any) => boolean> = {
+  payment_required: (v: any) => typeof v === 'boolean',
+  free_trials_allowed: (v: any) => typeof v === 'boolean',
+  trial_limit: (v: any) => typeof v === 'number' && v >= 0 && Number.isInteger(v),
+  payment_amount: (v: any) => typeof v === 'number' && v > 0,
+  payment_currency: (v: any) => typeof v === 'string' && v.length === 3,
+  site_name: (v: any) => typeof v === 'string' && v.length > 0,
+  site_description: (v: any) => typeof v === 'string',
+};
+
+function validateSetting(key: string, value: any): boolean {
+  const validator = settingValidators[key];
+  return validator ? validator(value) : true;
+}
+
+// Fonctions principales avec typage amélioré
+export async function getSystemSetting<T = unknown>(key: SettingKey): Promise<T | null> {
+  // Vérifier le cache d'abord
+  const cached = settingsCache.get<T>(key);
+  if (cached !== null) {
+    return cached;
   }
 
   try {
@@ -49,73 +164,92 @@ export async function getSystemSetting(key: string): Promise<any> {
       return null;
     }
 
-    // Mettre en cache
-    settingsCache.set(key, {
-      value: data.value,
-      timestamp: Date.now()
-    });
+    if (data?.value !== undefined && validateSetting(key, data.value)) {
+      settingsCache.set(key, data.value);
+      return data.value as T;
+    }
 
-    return data.value;
+    console.warn(`Invalid or missing value for setting ${key}`);
+    return null;
   } catch (error) {
     console.error(`Error fetching setting ${key}:`, error);
     return null;
   }
 }
 
-// Obtenir tous les paramètres de paiement
 export async function getPaymentSettings(): Promise<PaymentSettings> {
-  const [paymentRequired, freeTrialsAllowed, trialLimit, paymentAmount, paymentCurrency] = await Promise.all([
-    getSystemSetting('payment_required'),
-    getSystemSetting('free_trials_allowed'),
-    getSystemSetting('trial_limit'),
-    getSystemSetting('payment_amount'),
-    getSystemSetting('payment_currency')
-  ]);
-
-  return {
-    payment_required: paymentRequired ?? true,
-    free_trials_allowed: freeTrialsAllowed ?? false,
-    trial_limit: trialLimit ?? 1,
-    payment_amount: paymentAmount ?? 399,
-    payment_currency: paymentCurrency ?? 'EUR'
-  };
-}
-
-// Obtenir les paramètres généraux
-export async function getGeneralSettings(): Promise<GeneralSettings> {
-  const [siteName, siteDescription] = await Promise.all([
-    getSystemSetting('site_name'),
-    getSystemSetting('site_description')
-  ]);
-
-  return {
-    site_name: siteName ?? 'Clicklone',
-    site_description: siteDescription ?? 'Générateur de contenu intelligent'
-  };
-}
-
-// Mettre à jour un paramètre (admin seulement)
-export async function updateSystemSetting(key: string, value: any, description?: string): Promise<boolean> {
   try {
-    const { error } = await supabase
-      .from('system_settings')
-      .upsert({
+    const [paymentRequired, freeTrialsAllowed, trialLimit, paymentAmount, paymentCurrency] = await Promise.allSettled([
+      getSystemSetting<boolean>('payment_required'),
+      getSystemSetting<boolean>('free_trials_allowed'),
+      getSystemSetting<number>('trial_limit'),
+      getSystemSetting<number>('payment_amount'),
+      getSystemSetting<string>('payment_currency'),
+    ]);
+
+    return {
+      payment_required: paymentRequired.status === 'fulfilled' ? paymentRequired.value ?? true : true,
+      free_trials_allowed: freeTrialsAllowed.status === 'fulfilled' ? freeTrialsAllowed.value ?? false : false,
+      trial_limit: trialLimit.status === 'fulfilled' ? trialLimit.value ?? 1 : 1,
+      payment_amount: paymentAmount.status === 'fulfilled' ? paymentAmount.value ?? 399 : 399,
+      payment_currency: paymentCurrency.status === 'fulfilled' ? paymentCurrency.value ?? 'EUR' : 'EUR',
+    };
+  } catch (error) {
+    console.error('Error fetching payment settings:', error);
+    // Retourner des valeurs par défaut sécurisées
+    return {
+      payment_required: true,
+      free_trials_allowed: false,
+      trial_limit: 1,
+      payment_amount: 399,
+      payment_currency: 'EUR',
+    };
+  }
+}
+
+export async function getGeneralSettings(): Promise<GeneralSettings> {
+  try {
+    const [siteName, siteDescription] = await Promise.allSettled([
+      getSystemSetting<string>('site_name'),
+      getSystemSetting<string>('site_description'),
+    ]);
+
+    return {
+      site_name: siteName.status === 'fulfilled' ? siteName.value ?? 'Clicklone' : 'Clicklone',
+      site_description: siteDescription.status === 'fulfilled' ? siteDescription.value ?? 'Générateur de contenu intelligent' : 'Générateur de contenu intelligent',
+    };
+  } catch (error) {
+    console.error('Error fetching general settings:', error);
+    return {
+      site_name: 'Clicklone',
+      site_description: 'Générateur de contenu intelligent',
+    };
+  }
+}
+
+export async function updateSystemSetting(key: SettingKey, value: any, description?: string): Promise<boolean> {
+  if (!validateSetting(key, value)) {
+    console.error(`Invalid value for setting ${key}:`, value);
+    return false;
+  }
+
+  try {
+    const { error } = await supabase.from('system_settings').upsert(
+      {
         key,
         value,
         description,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'key'
-      });
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'key' }
+    );
 
     if (error) {
       console.error(`Error updating setting ${key}:`, error);
       return false;
     }
 
-    // Invalider le cache
     settingsCache.delete(key);
-
     return true;
   } catch (error) {
     console.error(`Error updating setting ${key}:`, error);
@@ -123,7 +257,6 @@ export async function updateSystemSetting(key: string, value: any, description?:
   }
 }
 
-// Obtenir tous les paramètres (admin seulement)
 export async function getAllSystemSettings(): Promise<SystemSetting[]> {
   try {
     const { data, error } = await supabase
@@ -144,37 +277,313 @@ export async function getAllSystemSettings(): Promise<SystemSetting[]> {
   }
 }
 
-// Vérifier si le paiement est requis
+// Fonctions utilitaires avec gestion d'erreurs améliorée
 export async function isPaymentRequired(): Promise<boolean> {
-  const paymentRequired = await getSystemSetting('payment_required');
-  return paymentRequired ?? true;
+  try {
+    return (await getSystemSetting<boolean>('payment_required')) ?? true;
+  } catch {
+    return true; // Défaut sécurisé
+  }
 }
 
-// Vérifier si les essais gratuits sont autorisés
 export async function areFreeTrialsAllowed(): Promise<boolean> {
-  const freeTrialsAllowed = await getSystemSetting('free_trials_allowed');
-  return freeTrialsAllowed ?? false;
+  try {
+    return (await getSystemSetting<boolean>('free_trials_allowed')) ?? false;
+  } catch {
+    return false; // Défaut sécurisé
+  }
 }
 
-// Obtenir la limite d'essais gratuits
 export async function getTrialLimit(): Promise<number> {
-  const trialLimit = await getSystemSetting('trial_limit');
-  return trialLimit ?? 1;
+  try {
+    return (await getSystemSetting<number>('trial_limit')) ?? 1;
+  } catch {
+    return 1; // Défaut sécurisé
+  }
 }
 
-// Obtenir le montant du paiement
 export async function getPaymentAmount(): Promise<number> {
-  const paymentAmount = await getSystemSetting('payment_amount');
-  return paymentAmount ?? 399; // 3.99€ par défaut
+  try {
+    return (await getSystemSetting<number>('payment_amount')) ?? 399;
+  } catch {
+    return 399; // Défaut sécurisé
+  }
 }
 
-// Obtenir la devise du paiement
 export async function getPaymentCurrency(): Promise<string> {
-  const paymentCurrency = await getSystemSetting('payment_currency');
-  return paymentCurrency ?? 'EUR';
+  try {
+    return (await getSystemSetting<string>('payment_currency')) ?? 'EUR';
+  } catch {
+    return 'EUR'; // Défaut sécurisé
+  }
 }
 
-// Vider le cache
 export function clearSettingsCache(): void {
   settingsCache.clear();
+}
+
+// Gestion des sessions avec fallback
+function getSessionId(): string {
+  let sessionId = safeStorage.getItem('session_id');
+  if (!sessionId) {
+    sessionId = uuidv4();
+    safeStorage.setItem('session_id', sessionId);
+  }
+  return sessionId;
+}
+
+export async function getTrialCount(sessionId: string): Promise<number> {
+  if (!sessionId) {
+    console.warn('No session ID provided for trial count check');
+    return 0;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('generation_sessions')
+      .select('trial_count')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error getting trial count:', error);
+      return 0;
+    }
+    
+    return data?.trial_count || 0;
+  } catch (error) {
+    console.error('Error getting trial count:', error);
+    return 0;
+  }
+}
+
+export async function incrementTrialCount(): Promise<boolean> {
+  try {
+    const sessionId = getSessionId();
+    const currentCount = await getTrialCount(sessionId);
+
+    const { error } = await supabase.from('generation_sessions').upsert(
+      {
+        session_id: sessionId,
+        trial_count: currentCount + 1,
+        last_generation: new Date().toISOString(),
+      },
+      { onConflict: 'session_id' }
+    );
+
+    if (error) {
+      console.error('Error incrementing trial count:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in incrementTrialCount:', error);
+    return false;
+  }
+}
+
+export async function savePendingResults(results: string): Promise<string> {
+  if (!results || results.trim().length === 0) {
+    throw new Error('Cannot save empty results');
+  }
+
+  try {
+    const resultId = uuidv4();
+    const expiresAt = new Date(Date.now() + 86400000); // 24h
+
+    const { error } = await supabase.from('pending_results').insert({
+      result_id: resultId,
+      content: results,
+      created_at: new Date().toISOString(),
+      expires_at: expiresAt.toISOString(),
+    });
+
+    if (error) {
+      console.error('Error saving pending results:', error);
+      throw error;
+    }
+
+    return resultId;
+  } catch (error) {
+    console.error('Error in savePendingResults:', error);
+    throw error;
+  }
+}
+
+export async function isPaymentTokenValid(token: string): Promise<boolean> {
+  if (!token || token.trim().length === 0) {
+    return false;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('payment_tokens')
+      .select('is_used, expires_at')
+      .eq('token', token)
+      .single();
+
+    if (error || !data) {
+      return false;
+    }
+
+    const isExpired = data.expires_at && new Date(data.expires_at) < new Date();
+    return !data.is_used && !isExpired;
+  } catch (error) {
+    console.error('Error validating payment token:', error);
+    return false;
+  }
+}
+
+// Nouvelle fonction pour créer un token de paiement
+export async function createPaymentToken(resultId: string, amount: number, currency: string = 'EUR'): Promise<string> {
+  try {
+    const token = uuidv4();
+    const expiresAt = new Date(Date.now() + 86400000); // 24h
+
+    const { error } = await supabase.from('payment_tokens').insert({
+      token,
+      amount,
+      currency,
+      expires_at: expiresAt.toISOString(),
+      result_id: resultId,
+    });
+
+    if (error) {
+      console.error('Error creating payment token:', error);
+      throw error;
+    }
+
+    return token;
+  } catch (error) {
+    console.error('Error in createPaymentToken:', error);
+    throw error;
+  }
+}
+
+// Nouvelle fonction pour marquer un token comme utilisé
+export async function markPaymentTokenAsUsed(token: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('payment_tokens')
+      .update({
+        is_used: true,
+        used_at: new Date().toISOString(),
+      })
+      .eq('token', token);
+
+    if (error) {
+      console.error('Error marking payment token as used:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in markPaymentTokenAsUsed:', error);
+    return false;
+  }
+}
+
+// Nouvelle fonction pour récupérer un token par resultId
+export async function getPaymentTokenByResultId(resultId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('payment_tokens')
+      .select('token')
+      .eq('result_id', resultId)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return data.token;
+  } catch (error) {
+    console.error('Error getting payment token by result ID:', error);
+    return null;
+  }
+}
+
+export async function checkPaymentStatus(): Promise<GenerationStatus> {
+  try {
+    const [paymentRequired, freeTrialsAllowed, trialLimit] = await Promise.allSettled([
+      isPaymentRequired(),
+      areFreeTrialsAllowed(),
+      getTrialLimit(),
+    ]);
+
+    const sessionId = getSessionId();
+    const trialCount = await getTrialCount(sessionId);
+
+    // Validation du token de paiement avec gestion d'erreur
+    const paymentToken = safeStorage.getItem('payment_token');
+    let hasValidPayment = false;
+    
+    if (paymentToken) {
+      try {
+        hasValidPayment = await isPaymentTokenValid(paymentToken);
+      } catch (error) {
+        console.warn('Error validating payment token:', error);
+        hasValidPayment = false;
+      }
+    }
+
+    const paymentReq = paymentRequired.status === 'fulfilled' ? paymentRequired.value : true;
+    const trialsAllowed = freeTrialsAllowed.status === 'fulfilled' ? freeTrialsAllowed.value : false;
+    const maxTrials = trialLimit.status === 'fulfilled' ? trialLimit.value : 1;
+
+    console.log('🔍 Database Settings Debug:', {
+      paymentRequired: paymentRequired.status === 'fulfilled' ? paymentRequired.value : 'ERROR',
+      freeTrialsAllowed: freeTrialsAllowed.status === 'fulfilled' ? freeTrialsAllowed.value : 'ERROR',
+      trialLimit: trialLimit.status === 'fulfilled' ? trialLimit.value : 'ERROR',
+      sessionId,
+      trialCount,
+      hasValidPayment,
+      paymentToken: paymentToken ? 'EXISTS' : 'NONE'
+    });
+
+    // Cas 1: Utilisateur a un paiement valide OU le paiement n'est pas requis
+    if (hasValidPayment || !paymentReq) {
+      console.log('✅ Cas 1: Accès gratuit (paiement valide ou non requis)');
+      return {
+        canGenerate: true,
+        requiresPayment: false,
+        showResults: true,
+        sessionId,
+      };
+    }
+
+    // Cas 2: Essais gratuits autorisés et utilisateur n'a pas atteint la limite
+    if (trialsAllowed && trialCount < maxTrials) {
+      console.log('✅ Cas 2: Essais gratuits disponibles');
+      return {
+        canGenerate: true,
+        requiresPayment: false,
+        showResults: true,
+        sessionId,
+        trialCount,
+        trialLimit: maxTrials,
+      };
+    }
+
+    // Cas 3: Paiement requis et utilisateur n'a pas de paiement valide
+    console.log('✅ Cas 3: Paiement requis');
+    return {
+      canGenerate: true,
+      requiresPayment: true,
+      showResults: false,
+      reason: 'payment.required',
+      sessionId,
+      trialCount,
+      trialLimit: maxTrials,
+    };
+  } catch (error) {
+    console.error('Error checking payment status:', error);
+    return {
+      canGenerate: false,
+      requiresPayment: true,
+      showResults: false,
+      reason: 'error.payment_check_failed',
+    };
+  }
 }

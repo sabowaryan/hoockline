@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, Circle, ArrowRight, Lock } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { isPaymentRequired, areFreeTrialsAllowed, getTrialLimit } from '../services/settings';
 import { useTranslation } from 'react-i18next';
 
 interface Step {
@@ -18,35 +17,37 @@ interface Step {
 
 export function StepNavigation() {
   const location = useLocation();
-  const { state } = useApp();
+  const { state, refreshPaymentStatus } = useApp();
   const currentPath = location.pathname;
-  const [paymentSettings, setPaymentSettings] = useState({
-    paymentRequired: true,
-    freeTrialsAllowed: false,
-    trialLimit: 1
-  });
+  const [paymentStatus, setPaymentStatus] = useState<{
+    canGenerate: boolean;
+    requiresPayment: boolean;
+    trialCount?: number;
+    trialLimit?: number;
+    showResults: boolean;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
 
   useEffect(() => {
-    loadPaymentSettings();
+    loadPaymentStatus();
   }, []);
 
-  const loadPaymentSettings = async () => {
+  const loadPaymentStatus = async () => {
     try {
-      const [paymentRequired, freeTrialsAllowed, trialLimit] = await Promise.all([
-        isPaymentRequired(),
-        areFreeTrialsAllowed(),
-        getTrialLimit()
-      ]);
-      
-      setPaymentSettings({
-        paymentRequired,
-        freeTrialsAllowed,
-        trialLimit
+      const status = await refreshPaymentStatus();
+      console.log('🔍 StepNavigation Payment Status Debug:', {
+        canGenerate: status.canGenerate,
+        requiresPayment: status.requiresPayment,
+        showResults: status.showResults,
+        trialCount: status.trialCount,
+        trialLimit: status.trialLimit,
+        reason: status.reason,
+        pendingResultId: state.pendingResultId
       });
+      setPaymentStatus(status);
     } catch (error) {
-      console.error('Error loading payment settings:', error);
+      console.error('Error loading payment status:', error);
     } finally {
       setLoading(false);
     }
@@ -54,29 +55,47 @@ export function StepNavigation() {
 
   // Vérifier si l'utilisateur peut accéder aux résultats
   const canAccessResults = () => {
-    if (!paymentSettings.paymentRequired) return true;
+    if (!paymentStatus) return false;
     
-    const hasPaid = localStorage.getItem('payment_completed') === 'true';
-    if (hasPaid) return true;
+    // Vérifier d'abord s'il y a des essais gratuits disponibles
+    const hasTrials = paymentStatus.trialCount !== undefined && 
+                     paymentStatus.trialLimit !== undefined && 
+                     paymentStatus.trialCount < paymentStatus.trialLimit;
     
-    if (paymentSettings.freeTrialsAllowed) {
-      const trialCount = parseInt(localStorage.getItem('trial_count') || '0');
-      return trialCount > 0;
-    }
+    console.log('🔍 StepNavigation canAccessResults Debug:', {
+      hasTrials,
+      trialCount: paymentStatus.trialCount,
+      trialLimit: paymentStatus.trialLimit,
+      requiresPayment: paymentStatus.requiresPayment,
+      canGenerate: paymentStatus.canGenerate,
+      showResults: paymentStatus.showResults
+    });
     
-    return false;
+    // Si l'utilisateur a des essais gratuits, il peut accéder aux résultats
+    if (hasTrials) return true;
+    
+    // Sinon, vérifier l'accès gratuit normal
+    if (!paymentStatus.requiresPayment) return true;
+    
+    return paymentStatus.canGenerate && paymentStatus.showResults;
   };
 
   // Vérifier si l'utilisateur peut accéder au paiement
   const canAccessPayment = () => {
-    if (!paymentSettings.paymentRequired) return false;
+    if (!paymentStatus) return false;
     
-    const hasPaid = localStorage.getItem('payment_completed') === 'true';
-    if (hasPaid) return false;
+    // Si l'utilisateur a un pendingResultId, il peut toujours accéder au paiement
+    if (state.pendingResultId) return true;
     
-    if (paymentSettings.freeTrialsAllowed) {
-      const trialCount = parseInt(localStorage.getItem('trial_count') || '0');
-      return trialCount >= paymentSettings.trialLimit;
+    // Si le paiement n'est pas requis, pas d'accès au paiement
+    if (!paymentStatus.requiresPayment) return false;
+    
+    // Si l'utilisateur a déjà accès aux résultats ET des phrases générées, pas besoin de paiement
+    if (paymentStatus.canGenerate && paymentStatus.showResults && state.generatedPhrases.length > 0) return false;
+    
+    // L'utilisateur peut accéder au paiement s'il a épuisé ses essais gratuits
+    if (paymentStatus.trialCount !== undefined && paymentStatus.trialLimit !== undefined) {
+      return paymentStatus.trialCount >= paymentStatus.trialLimit;
     }
     
     return true;
@@ -113,18 +132,13 @@ export function StepNavigation() {
   const getAvailableSteps = () => {
     let steps = [...baseSteps];
 
-    // Si le paiement n'est pas requis, supprimer l'étape paiement
-    if (!paymentSettings.paymentRequired) {
-      steps = steps.filter(step => step.id !== 'payment');
-    }
+    // Avec le système de paiement par génération, l'étape payment est toujours disponible
+    // si l'utilisateur a un pendingResultId ou si le paiement est requis
+    const shouldShowPayment = state.pendingResultId || 
+      (paymentStatus?.requiresPayment && !paymentStatus?.showResults);
 
-    // Si les essais gratuits sont autorisés et que l'utilisateur n'a pas atteint la limite
-    if (paymentSettings.freeTrialsAllowed) {
-      const trialCount = parseInt(localStorage.getItem('trial_count') || '0');
-      if (trialCount < paymentSettings.trialLimit) {
-        // L'étape paiement n'est pas encore nécessaire
-        steps = steps.filter(step => step.id !== 'payment');
-      }
+    if (!shouldShowPayment) {
+      steps = steps.filter(step => step.id !== 'payment');
     }
 
     return steps;
@@ -144,11 +158,14 @@ export function StepNavigation() {
     if (step.id === 'payment') {
       available = canAccessPayment();
       if (!available) {
-        disabledReason = !paymentSettings.paymentRequired 
+        disabledReason = state.pendingResultId
+          ? t('stepnav.notAvailable')
+          : !paymentStatus?.requiresPayment 
           ? t('stepnav.paymentNotRequired')
-          : localStorage.getItem('payment_completed') === 'true'
+          : paymentStatus?.canGenerate && paymentStatus?.showResults && state.generatedPhrases.length > 0
           ? t('stepnav.paymentAlreadyDone')
-          : paymentSettings.freeTrialsAllowed && parseInt(localStorage.getItem('trial_count') || '0') < paymentSettings.trialLimit
+          : paymentStatus?.trialCount !== undefined && paymentStatus?.trialLimit !== undefined && 
+            paymentStatus.trialCount < paymentStatus.trialLimit
           ? t('stepnav.freeTrialsAvailable')
           : t('stepnav.notAvailable');
       }
@@ -249,39 +266,28 @@ export function StepNavigation() {
                     : step.current 
                       ? 'text-purple-600' 
                       : step.available
-                        ? 'text-gray-500'
+                        ? 'text-gray-600'
                         : 'text-gray-400'
                   }
                 `}>
                   {step.label}
                 </div>
-                <div className={`text-xs leading-tight ${
-                  step.available ? 'text-gray-400' : 'text-gray-300'
-                }`}>
-                  {step.disabledReason || step.description}
+                <div className={`
+                  text-[10px] leading-tight
+                  ${step.completed 
+                    ? 'text-green-500' 
+                    : step.current 
+                      ? 'text-purple-500'
+                      : step.available
+                        ? 'text-gray-500'
+                        : 'text-gray-400'
+                  }
+                `}>
+                  {step.available ? step.description : step.disabledReason}
                 </div>
               </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Current step info */}
-      <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-bold">
-              {updatedSteps.findIndex(s => s.current) + 1}
-            </span>
-          </div>
-          <div>
-            <h4 className="font-semibold text-gray-900">
-              {updatedSteps.find(s => s.current)?.label}
-            </h4>
-            <p className="text-sm text-gray-600">
-              {updatedSteps.find(s => s.current)?.description}
-            </p>
-          </div>
         </div>
       </div>
     </div>

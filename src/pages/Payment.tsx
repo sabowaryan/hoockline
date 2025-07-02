@@ -10,53 +10,67 @@ import {
   Lock, 
   AlertCircle,
   Sparkles,
-  Zap,
+
   Award,
-  Users,
-  Clock,
-  ArrowRight
+
+  ArrowRight,
+  RefreshCw
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { createCheckoutSession } from '../services/stripe';
 import { products, formatPrice } from '../stripe-config';
-import { getPaymentAmount, getPaymentCurrency } from '../services/settings';
 import { useTranslation } from 'react-i18next';
 
-const languageNames: Record<string, string> = {
-  'fr': 'Français',
-  'en': 'English',
-  'es': 'Español',
-  'de': 'Deutsch',
-  'it': 'Italiano',
-  'pt': 'Português'
-};
 
 export function Payment() {
-  const { state, navigateToGenerator } = useApp();
+  const { state, navigateToGenerator, refreshPaymentStatus } = useApp();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState(399);
-  const [paymentCurrency, setPaymentCurrency] = useState('EUR');
   const [animateIn, setAnimateIn] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<{
+    canGenerate: boolean;
+    requiresPayment: boolean;
+    trialCount?: number;
+    trialLimit?: number;
+    showResults: boolean;
+    reason?: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
 
   const product = products[0]; // Hookline product
 
   useEffect(() => {
     setAnimateIn(true);
-    loadPaymentSettings();
-  }, []);
+    loadPaymentStatus();
+    
+    // Récupérer le pendingResultId depuis sessionStorage si pas dans le contexte
+    if (!state.pendingResultId) {
+      const pendingResultId = sessionStorage.getItem('pending_result_id');
+      if (pendingResultId) {
+        console.log('🔍 PaymentPage: Récupéré pendingResultId depuis sessionStorage:', pendingResultId);
+        // Mettre à jour le contexte avec le pendingResultId
+        // Note: Cette logique devrait être dans le contexte, mais pour l'instant on utilise sessionStorage
+      }
+    }
+  }, [state.pendingResultId]);
 
-  const loadPaymentSettings = async () => {
+  const loadPaymentStatus = async () => {
     try {
-      const [amount, currency] = await Promise.all([
-        getPaymentAmount(),
-        getPaymentCurrency()
-      ]);
-      setPaymentAmount(amount);
-      setPaymentCurrency(currency);
+      const status = await refreshPaymentStatus();
+      console.log('🔍 PaymentPage Payment Status Debug:', {
+        canGenerate: status.canGenerate,
+        requiresPayment: status.requiresPayment,
+        showResults: status.showResults,
+        trialCount: status.trialCount,
+        trialLimit: status.trialLimit,
+        reason: status.reason
+      });
+      setPaymentStatus(status);
     } catch (error) {
-      console.error('Error loading payment settings:', error);
+      console.error('Error loading payment status:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -66,8 +80,16 @@ export function Payment() {
     
     try {
       const currentUrl = window.location.origin;
-      const successUrl = `${currentUrl}?success=true`;
+      
+      // Récupérer le pendingResultId depuis le contexte ou sessionStorage
+      const pendingResultId = state.pendingResultId || sessionStorage.getItem('pending_result_id');
+      
+      const successUrl = pendingResultId 
+        ? `${currentUrl}?success=true&result_id=${pendingResultId}`
+        : `${currentUrl}?success=true`;
       const cancelUrl = `${currentUrl}?canceled=true`;
+
+      console.log('🔍 PaymentPage: Utilisation du pendingResultId:', pendingResultId);
 
       const { url } = await createCheckoutSession({
         priceId: product.priceId,
@@ -83,7 +105,7 @@ export function Payment() {
       }
     } catch (err: any) {
       console.error('Payment error:', err);
-      setError(err.message || 'Une erreur est survenue lors du paiement');
+      setError(err.message || t('payment.error.default'));
       setIsProcessing(false);
     }
   };
@@ -91,6 +113,52 @@ export function Payment() {
   const handleGoBack = () => {
     navigateToGenerator();
   };
+
+  // Vérifier si l'utilisateur peut accéder aux résultats
+  const canAccessResults = () => {
+    if (!paymentStatus) return false;
+    
+    // Vérifier d'abord s'il y a des essais gratuits disponibles
+    const hasTrials = paymentStatus.trialCount !== undefined && 
+                     paymentStatus.trialLimit !== undefined && 
+                     paymentStatus.trialCount < paymentStatus.trialLimit;
+    
+    console.log('🔍 PaymentPage canAccessResults Debug:', {
+      hasTrials,
+      trialCount: paymentStatus.trialCount,
+      trialLimit: paymentStatus.trialLimit,
+      requiresPayment: paymentStatus.requiresPayment,
+      canGenerate: paymentStatus.canGenerate,
+      showResults: paymentStatus.showResults
+    });
+    
+    // Si l'utilisateur a des essais gratuits, il peut accéder aux résultats
+    if (hasTrials) return true;
+    
+    // Sinon, vérifier l'accès gratuit normal
+    if (!paymentStatus.requiresPayment) return true;
+    
+    return paymentStatus.canGenerate && paymentStatus.showResults;
+  };
+
+  // Si l'utilisateur a déjà accès, le rediriger vers le générateur
+  const pendingResultId = state.pendingResultId || sessionStorage.getItem('pending_result_id');
+  if (canAccessResults() && state.generatedPhrases.length > 0 && !pendingResultId && !loading) {
+    navigateToGenerator();
+    return null;
+  }
+
+  // Si on charge le statut de paiement
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-pink-50">
+        <div className="text-center p-8">
+          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">{t('payment.loading')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 py-6 sm:py-8">
@@ -234,7 +302,7 @@ export function Payment() {
                   <div className="flex items-center space-x-2">
                     <Globe className="w-4 h-4 text-gray-500" />
                     <div className="text-sm font-semibold text-gray-900">
-                      {t(`generator.form.languages.${state.generationRequest.language}`) || state.generationRequest.language}
+                      {t(`generator.form.languages.${state.generationRequest.targetLanguage}`) || state.generationRequest.targetLanguage}
                     </div>
                   </div>
                 </div>
@@ -255,6 +323,23 @@ export function Payment() {
               </div>
               <div className="text-sm text-green-700">
                 {t('payment.sslStripe')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment per Generation Info */}
+        <div className={`bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-3xl p-6 mb-8 shadow-xl transition-all duration-1000 ${animateIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ animationDelay: '1100ms' }}>
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-full flex items-center justify-center">
+              <RefreshCw className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div className="text-base font-semibold text-blue-900 mb-1">
+                {t('payment.perGeneration')}
+              </div>
+              <div className="text-sm text-blue-700">
+                {t('payment.perGenerationDesc')}
               </div>
             </div>
           </div>

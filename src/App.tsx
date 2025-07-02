@@ -18,6 +18,7 @@ import { AnalyticsPage } from './pages/Admin/AnalyticsPage';
 import { SettingsPage } from './pages/Admin/SettingsPage';
 import { SEOManager } from './components/common/SEOManager';
 import { NotificationContainer } from './components/common/Notification';
+import { ScrollManager } from './components/common/ScrollManager';
 import { trackPageViewDebounced } from './services/analytics';
 
 function TrackPageView() {
@@ -38,7 +39,8 @@ function App() {
       <TrackPageView />
       <AppProvider>
         <NotificationContainer />
-        <Routes>
+        <ScrollManager>
+          <Routes>
           {/* Public Routes */}
           <Route path="/" element={
             <PublicLayout>
@@ -131,6 +133,7 @@ function App() {
             </AuthWrapper>
           } />
         </Routes>
+        </ScrollManager>
       </AppProvider>
     </BrowserRouter>
   );

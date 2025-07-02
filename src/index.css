@@ -1,3 +1,114 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Optimisations pour éviter les problèmes de défilement */
+html {
+  scroll-behavior: smooth;
+  /* Désactiver le scroll-behavior automatique pour éviter les conflits */
+}
+
+body {
+  /* Optimiser le rendu des animations */
+  will-change: auto;
+  /* Réduire les micro-interactions qui causent des problèmes de défilement */
+  overscroll-behavior: none;
+}
+
+/* Custom animations for hero section */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+/* Optimisations pour les animations */
+.animate-blob {
+  animation: blob 7s infinite;
+  /* Utiliser transform au lieu de position pour de meilleures performances */
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Optimisations pour les transitions */
+.transition-all {
+  /* Utiliser des propriétés spécifiques au lieu de 'all' */
+  transition-property: opacity, transform, background-color, border-color, color, fill, stroke;
+  /* Réduire la durée pour éviter les conflits */
+  transition-duration: 300ms;
+  /* Utiliser ease-out pour des animations plus naturelles */
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Optimisations pour les hover effects */
+.hover\:scale-105:hover {
+  transform: scale(1.05) translateZ(0);
+  will-change: transform;
+}
+
+.hover\:translate-x-2:hover {
+  transform: translateX(0.5rem) translateZ(0);
+  will-change: transform;
+}
+
+/* Optimisations pour les animations de loading */
+.animate-spin {
+  animation: spin 1s linear infinite;
+  will-change: transform;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: opacity;
+}
+
+/* Désactiver les animations sur les appareils qui préfèrent moins de mouvement */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Optimisations pour les conteneurs avec backdrop-blur */
+.backdrop-blur-sm {
+  /* Utiliser will-change pour optimiser le rendu */
+  will-change: backdrop-filter;
+  /* Forcer l'accélération matérielle */
+  transform: translateZ(0);
+}
+
+/* Optimisations pour les gradients */
+.bg-gradient-to-r {
+  /* Utiliser will-change pour optimiser le rendu des gradients */
+  will-change: background-image;
+}
+
+/* Optimisations pour les ombres */
+.shadow-lg,
+.shadow-xl,
+.shadow-2xl {
+  /* Utiliser will-change pour optimiser le rendu des ombres */
+  will-change: box-shadow;
+}

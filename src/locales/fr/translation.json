@@ -15,7 +15,25 @@
     "seo": "SEO",
     "traffic": "Trafic"
   },
+  "languages": {
+    "Français": "Français",
+    "English (US)": "Anglais (États-Unis)",
+    "English (UK)": "Anglais (Royaume-Uni)", 
+    "Español": "Espagnol",
+    "Deutsch": "Allemand",
+    "العربية": "Arabe",
+    "Português (BR)": "Portugais (Brésil)"
+  },
   "home": {
+    "freeAccess": "Accès gratuit débloqué !",
+    "freeDescription": "Vous avez accès à toutes les fonctionnalités gratuitement",
+    "startNow": "Commencer maintenant",
+    "trialTitle": "Essai gratuit disponible",
+    "trialDescription": "Il vous reste {{count}} essais sur {{limit}} disponibles",
+    "startTrial": "Commencer l'essai",
+    "premiumTitle": "Accès Premium requis",
+    "premiumDescription": "Débloquez toutes les fonctionnalités avec l'accès premium",
+    "startPremium": "Obtenir l'accès premium",
     "hero": {
       "title": "Créez des phrases d'accroche percutantes avec l'IA",
       "subtitle": "Générez 10 phrases uniques et impactantes en quelques secondes",
@@ -30,11 +48,11 @@
         "description": "Technologie de pointe pour des phrases créatives et percutantes"
       },
       "tones": {
-        "title": "6 tons personnalisés",
+        "title": " tons personnalisés",
         "description": "Humoristique, inspirant, direct, mystérieux, luxueux, technologique"
       },
       "languages": {
-        "title": "6 langues natives",
+        "title": " langues natives",
         "description": "Français, anglais, espagnol, allemand, italien, portugais"
       },
       "instant": {
@@ -78,6 +96,8 @@
       "button": "Commencer maintenant"
     },
     "stats": {
+      "title": "Chiffres qui parlent",
+      "subtitle": "Découvrez l'impact de Clicklone sur la création de contenu",
       "phrases": "Phrases générées",
       "users": "Utilisateurs satisfaits",
       "satisfaction": "Taux de satisfaction",
@@ -120,55 +140,88 @@
         "3": "6 langues supportées"
       },
       "productDescription": "Pack de 10 phrases d'accroche personnalisées générées par IA"
-    }
+    },
+    "loading": "Chargement en cours..."
   },
   "generator": {
-    "title": "Générateur IA",
-    "description": "Créez vos phrases d'accroche personnalisées avec l'intelligence artificielle",
-    "payment": {
-      "proceed": "Procéder au paiement"
-    },
+    "title": "Générateur d'accroches",
+    "description": "Créez des accroches percutantes pour vos contenus marketing",
     "form": {
-      "concept": "Votre concept ou produit",
-      "conceptDescription": "Décrivez ce que vous voulez promouvoir",
-      "conceptPlaceholder": "Ex: Application de méditation, Service de livraison, Plateforme de freelancing...",
-      "conceptHelp": "Décrivez votre concept en quelques mots pour que l'IA puisse créer des phrases adaptées",
-      "tone": "Choisissez votre ton",
-      "toneDescription": "Sélectionnez l'ambiance de vos phrases",
-      "language": "Langue de génération",
-      "languageDescription": "Choisissez la langue de vos phrases",
-      "generate": "Générer mes phrases d'accroche",
+      "concept": "Votre concept",
+      "conceptDescription": "Décrivez votre produit, service ou idée en quelques mots",
+      "conceptHelp": "Plus votre description est précise, meilleurs seront les résultats",
+      "conceptPlaceholder": "Ex: Une application mobile de finance personnelle qui aide à économiser",
+      "tone": "Ton de voix",
+      "toneDescription": "Choisissez le style qui correspond le mieux à votre marque",
+      "language": "Langue",
+      "languageDescription": "Sélectionnez la langue de vos accroches",
+      "format": "Format",
+      "formatDescription": "Choisissez le type d'accroche dont vous avez besoin",
+      "platform": "Plateforme",
+      "generate": "Générer les accroches",
       "generating": "Génération en cours...",
-      "freeTitle": "Génération gratuite",
-      "freeDescription": "Vous pouvez générer vos phrases gratuitement",
+      "freeTitle": "Génération illimitée",
+      "freeDescription": "Vous avez accès à la génération illimitée d'accroches",
+      "trialTitle": "Essai gratuit",
+      "trialCount": "Essai {{count}}/{{limit}} - Profitez-en !",
+      "paymentRequired": "Accès limité",
+      "paymentDescription": "Débloquez la génération illimitée pour {{price}}",
+      "formats": {
+        "tagline": "Tagline de startup",
+        "formation": "Titre de formation",
+        "app_store": "Description App Store",
+        "hero_banner": "Hero Banner",
+        "cta": "Call-to-Action (CTA)",
+        "slogan": "Slogan publicitaire",
+        "ad_copy": "Ad Copy courte",
+        "tweet": "Tweet startup",
+        "email": "Intro email B2B",
+        "onboarding": "Message onboarding",
+        "faq": "FAQ / Objections"
+      },
+      "formatsDesc": {
+        "tagline": "Slogan court et impactant qui résume votre mission",
+        "formation": "Titre accrocheur qui promet une transformation",
+        "app_store": "Description optimisée pour les stores d'applications",
+        "hero_banner": "Titre principal de votre site web",
+        "cta": "Bouton d'action qui convertit",
+        "slogan": "Accroche publicitaire mémorable",
+        "ad_copy": "Texte publicitaire persuasif",
+        "tweet": "Tweet authentique et engageant",
+        "email": "Phrase d'intro qui brise la glace",
+        "onboarding": "Message d'accueil guidant",
+        "faq": "Réponse claire aux objections"
+      },
       "tones": {
         "humoristique": "Humoristique",
         "inspirant": "Inspirant",
-        "direct": "Direct et Bref",
+        "direct": "Direct",
         "mysterieux": "Mystérieux",
         "luxueux": "Luxueux",
-        "techy": "Technologique"
+        "techy": "Tech"
       },
       "tonesDesc": {
-        "humoristique": "Amusant et décalé",
-        "inspirant": "Motivant et positif",
-        "direct": "Efficace et percutant",
-        "mysterieux": "Intriguant et curieux",
-        "luxueux": "Élégant et premium",
-        "techy": "Innovant et moderne"
+        "humoristique": "Ton léger et amusant qui fait sourire",
+        "inspirant": "Ton motivant qui pousse à l'action",
+        "direct": "Ton franc et efficace qui va droit au but",
+        "mysterieux": "Ton intrigant qui suscite la curiosité",
+        "luxueux": "Ton raffiné qui évoque l'excellence",
+        "techy": "Ton innovant qui parle aux technophiles"
       },
       "languages": {
         "fr": "Français",
-        "en": "Anglais",
+        "en-US": "Anglais (US)",
+        "en-GB": "Anglais (UK)",
         "es": "Espagnol",
         "de": "Allemand",
-        "it": "Italien",
-        "pt": "Portugais"
-      },
-      "trialTitle": "Essai gratuit disponible",
-      "trialCount": "{{count}}/{{limit}} essais gratuits",
-      "paymentRequired": "Paiement requis pour voir les résultats",
-      "paymentDescription": "Générez vos phrases maintenant, puis payez {{price}} pour les débloquer"
+        "ar": "Arabe",
+        "pt-BR": "Portugais (BR)"
+      }
+    },
+    "payment": {
+      "proceed": "Passer au paiement",
+      "success": "Paiement réussi",
+      "error": "Erreur de paiement"
     },
     "results": {
       "title": "Vos phrases d'accroche générées",
@@ -206,7 +259,13 @@
     "terms2": "conditions d'utilisation",
     "ssl": "SSL sécurisé",
     "stripe": "Stripe certifié",
-    "instantAccess": "Accès immédiat"
+    "instantAccess": "Accès immédiat",
+    "required": "Paiement requis",
+    "proceed": "Procéder au paiement",
+    "perGeneration": "Paiement par génération",
+    "perGenerationDesc": "Chaque génération nécessite un nouveau paiement pour garantir la qualité et la fraîcheur du contenu.",
+    "perGeneration": "Paiement par génération",
+    "perGenerationDesc": "Chaque génération nécessite un nouveau paiement pour garantir la qualité et la fraîcheur du contenu."
   },
   "success": {
     "loading": "Chargement de votre commande...",
@@ -236,6 +295,9 @@
     "ctaDesc": "Utilisez ces phrases pour vos titres, vos slogans ou vos posts. Revenez quand vous le souhaitez pour générer de nouvelles accroches dans d'autres langues !",
     "generateMore": "Générer d'autres phrases",
     "backHome": "Retour à l'accueil",
+    "redirecting": "Redirection automatique...",
+    "redirectDesc": "Vous allez être redirigé vers vos résultats dans",
+    "viewResults": "Voir les résultats",
     "testimonial": {
       "text": "Clicklone m'a fait gagner des heures de brainstorming ! Les phrases générées sont parfaites pour mes campagnes.",
       "author": "- Sarah M., Responsable Marketing"
@@ -281,7 +343,8 @@
     "success": "Succès",
     "error": "Erreur",
     "warning": "Avertissement",
-    "info": "Information"
+    "info": "Information",
+    "copied": "Copié dans le presse-papier !"
   },
   "footer": {
     "slogan1": "Le générateur IA qui transforme vos idées en phrases d'accroche percutantes.",
@@ -323,7 +386,8 @@
     "notAvailable": "Non disponible",
     "noGenerated": "Aucune phrase générée",
     "unauthorized": "Accès non autorisé",
-    "unavailablePages": "Pages non disponibles"
+    "unavailablePages": "Pages non disponibles",
+    "paymentPerGeneration": "Paiement par génération"
   },
   "stepnav": {
     "title": "Progression",
@@ -341,7 +405,8 @@
     "freeTrialsAvailable": "Essais gratuits disponibles",
     "notAvailable": "Non disponible",
     "noGenerated": "Aucune phrase générée",
-    "unauthorized": "Accès non autorisé"
+    "unauthorized": "Accès non autorisé",
+    "paymentPerGeneration": "Paiement par génération"
   },
   "breadcrumb": {
     "home": "Accueil",
@@ -356,18 +421,24 @@
     "seo": "SEO"
   },
   "results": {
-    "emptyTitle": "Aucune phrase générée",
-    "emptyDesc": "Commencez par générer vos phrases d'accroche personnalisées",
+    "emptyTitle": "Aucune accroche générée",
+    "emptyDesc": "Commencez par générer des accroches pour votre concept",
     "startGeneration": "Commencer la génération",
-    "readyTitle": "Vos phrases d'accroche sont prêtes !",
+    "readyTitle": "Vos accroches sont prêtes !",
     "personalizedPhrases": "Voici vos",
-    "for": "phrases personnalisées pour",
-    "tone": "Ton",
-    "copied": "Copié !",
+    "for": "accroches pour",
+    "tone": "Ton :",
+    "language": "Langue :",
+    "ctaTitle": "Envie de créer plus d'accroches ?",
+    "ctaDesc": "Générez de nouvelles versions ou essayez différents tons et formats",
+    "generateMore": "Générer d'autres accroches",
+    "backHome": "Retour à l'accueil",
     "copy": "Copier",
-    "ctaTitle": "C'est parti pour conquérir le monde ! 🚀",
-    "ctaDesc": "Utilisez ces phrases pour vos titres, vos slogans ou vos posts. Revenez quand vous le souhaitez pour générer de nouvelles accroches dans d'autres langues !",
-    "generateMore": "Générer d'autres phrases",
-    "backHome": "Retour à l'accueil"
+    "copied": "Copié !",
+    "download": "Télécharger",
+    "paymentRequired": "Paiement requis",
+    "paymentDesc": "Vous devez effectuer un paiement pour accéder à vos résultats",
+    "upgrade": "Procéder au paiement",
+    "loading": "Chargement..."
   }
 } 
